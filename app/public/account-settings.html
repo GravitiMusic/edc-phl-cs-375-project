@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account Settings</title>
+  <link rel="stylesheet" href="settingsStyle.css" />
+</head>
+<body>
+  <div class="settings-container">
+    <!-- Header -->
+    <header class="settings-header">
+      <h1>Account Settings</h1>
+      <div class="header-right">
+        <button class="icon-button">?</button>
+        <button class="icon-button">⚙</button>
+        <div class="user-avatar">C</div>
+      </div>
+    </header>
+
+    <div class="settings-content">
+      <!-- Sidebar Navigation -->
+      <nav class="sidebar">
+        <ul class="nav-list">
+          <li class="nav-item active" data-tab="personal-info">
+            <span class="nav-icon">👤</span>
+            <span class="nav-text">Personal info</span>
+          </li>
+          <li class="nav-item" data-tab="security">
+            <span class="nav-icon">🛡️</span>
+            <span class="nav-text">Security</span>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <!-- Personal Info Tab -->
+        <section class="tab-content active" id="personal-info">
+          <h2>Personal info</h2>
+          <p class="subtitle">Info about you and your preferences across our services</p>
+          
+          <div class="settings-section">
+            <h3>Basic info</h3>
+            <div class="settings-list">
+              <div class="setting-item">
+                <div class="setting-info">
+                  <label>Name</label>
+                  <p>John Doe</p>
+                </div>
+                <button class="edit-button">Edit</button>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <label>Username</label>
+                  <p>johndoe123</p>
+                </div>
+                <button class="edit-button">Edit</button>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <label>Email</label>
+                  <p>john@example.com</p>
+                </div>
+                <button class="edit-button">Edit</button>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <label>Phone</label>
+                  <p>(555) 123-4567</p>
+                </div>
+                <button class="edit-button">Edit</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Security Tab -->
+        <section class="tab-content" id="security">
+          <h2>Security</h2>
+          <p class="subtitle">Settings and recommendations to help keep your account secure</p>
+          
+          <div class="settings-section">
+            <h3>How you sign in</h3>
+            <div class="settings-list">
+              <div class="setting-item">
+                <div class="setting-info">
+                  <label>Password</label>
+                  <p>Last changed 30 days ago</p>
+                </div>
+                <button class="edit-button">Change</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="account-settings.js"></script>
+</body>
+</html>
