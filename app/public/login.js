@@ -7,7 +7,7 @@ loginButton.addEventListener("click", () => {
     let user = usernameInput.value;
     let pass = passwordInput.value;
 
-    fetch("/login",  {
+    fetch("/auth/login",  {
       method: "POST",
       headers: {
           "Content-Type": "application/json"
