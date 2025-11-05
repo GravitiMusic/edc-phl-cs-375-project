@@ -1,3 +1,8 @@
+//added for CodeMirror
+const path = require("path");
+
+
+
 const express = require("express");
 let cookieParser = require("cookie-parser");
 
@@ -6,7 +11,13 @@ const app = express();
 const port = 3000;
 const hostname = "localhost";
 
-app.use(express.static("public"));
+//removed for codemirror
+//app.use(express.static("public"));
+
+//testing for Codemirror:
+app.use(express.static(path.join(__dirname, "public")));
+
+//Middleware
 app.use(express.json());
 app.use(cookieParser())
 
