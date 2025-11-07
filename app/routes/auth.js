@@ -3,9 +3,6 @@ const router = express.Router();
 const argon2 = require("argon2");
 const db = require('../database');
 
-// No more tokenStorage or makeToken needed!
-// Sessions handle everything for us
-
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
   
@@ -56,6 +53,56 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({ error: "Login failed" });
+  }
+});
+
+/**
+ * GET /auth/me
+ * Get current logged-in user info
+ */
+router.get("/me", (req, res) => {
+  // Check if user has a session
+  if (req.session && req.session.userId) {
+    return res.json({
+      authenticated: true,
+      user: {
+        id: req.session.userId,
+        username: req.session.username
+      }
+    });
+  }
+  
+  // Not logged in
+  return res.json({ 
+    authenticated: false 
+  });
+});
+
+/**
+ * POST /auth/logout
+ * Log out the current user
+ */
+router.post("/logout", (req, res) => {
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ 
+          success: false, 
+          error: "Logout failed" 
+        });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Logged out successfully" 
+      });
+    });
+  } else {
+    res.json({ 
+      success: true, 
+      message: "No active session" 
+    });
   }
 });
 

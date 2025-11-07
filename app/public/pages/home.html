@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home - OneUp</title>
+  <link rel="stylesheet" href="../css/home.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Loading state -->
+    <div id="loading" class="loading">
+      Loading...
+    </div>
+
+    <!-- Main content (hidden until loaded) -->
+    <div id="content" style="display: none;">
+      <h1>Welcome Back! 👋</h1>
+      <p class="welcome-message">
+        You're successfully logged in to OneUp
+        <span class="status-badge">✓ Authenticated</span>
+      </p>
+
+      <div class="user-info">
+        <h2>Your Account Information</h2>
+        <div class="info-row">
+          <span class="info-label">User ID:</span>
+          <span class="info-value" id="userId">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Username:</span>
+          <span class="info-value" id="username">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Session Status:</span>
+          <span class="info-value">Active (stored in PostgreSQL)</span>
+        </div>
+      </div>
+
+      <!-- Developer Navigation -->
+      <div class="dev-nav">
+        <h2>🔧 Developer Navigation</h2>
+        <ul class="dev-nav-list">
+          <li><a href="/pages/home.html">🏠 Home</a></li>
+          <li><a href="/pages/login.html">🔑 Login</a></li>
+        </ul>
+      </div>
+
+      <div class="actions">
+        <button class="btn-primary" onclick="goToAccount()">
+          Account Settings
+        </button>
+        <button class="btn-secondary" onclick="logout()">
+          Log Out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/home.js"></script>
+</body>
+</html>
+
