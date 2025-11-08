@@ -1,4 +1,4 @@
-# CS-375 Project - Group: Wendy's 4 for $4
+# CS-375 Project - Group: EDC Philadelphia
 
 ---
 
@@ -28,3 +28,23 @@ The goal for this project is to have a working daily coding challenge game, wher
 * Some sort of global visualization/ranking of submission stats
   * Could be runtime, github commits, etc.
 * Users will have some level of sample code & will be able to code in a series of different supported languag
+
+---
+
+## Quick Start
+
+**First time setup:**
+```bash
+npm install                 # Install dependencies
+cp env.example .env        # Create config file (then edit with your password)
+npm run reset              # Create database + admin user
+npm start                  # Start server → http://localhost:3000
+```
+
+**Daily workflow:**
+```bash
+npm start                  # Start the server
+# Login: admin / admin
+```
+
+📖 **New to the project?** See [`GETTING_STARTED.md`](GETTING_STARTED.md) for detailed instructions.
