@@ -1,17 +1,48 @@
-// app/public/codeMirror.js
 import { EditorState } from "https://esm.sh/@codemirror/state";
 import { EditorView, basicSetup } from "https://esm.sh/codemirror";
 import { python } from "https://esm.sh/@codemirror/lang-python";
 
+// Create the editor
 const editor = new EditorView({
   state: EditorState.create({
-    doc: 'console.log("Hello from CodeMirror via CDN!");\n',
+    doc: 'print("Hello World!")\nx=1\nprint(x)',
     extensions: [basicSetup, python()],
   }),
   parent: document.getElementById("editor"),
 });
 
-document.getElementById("runButton").addEventListener("click", () => {
+const runButton = document.getElementById("runButton");
+const outputEl = document.getElementById("output");
+
+runButton.addEventListener("click", async () => {
   const code = editor.state.doc.toString();
-  document.getElementById("output").textContent = code;
+  outputEl.textContent = "⏳ Your code is being run...";
+
+  try {
+    
+    const response = await fetch("/run", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source_code: code,
+        language_id: 71, // code for python
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.stdout) {
+      outputEl.textContent = "✅ Output:\n" + result.stdout;
+    } else if (result.stderr) {
+      outputEl.textContent = "⚠️ Error:\n" + result.stderr;
+    } else if (result.compile_output) {
+      outputEl.textContent = "💥 Compile error:\n" + result.compile_output;
+    } else {
+      outputEl.textContent = "❓ No output received.";
+    }
+  } catch (err) {
+    outputEl.textContent = "❌ Request failed:\n" + err;
+  }
 });
