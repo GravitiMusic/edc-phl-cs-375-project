@@ -1,4 +1,5 @@
 let usernameInput = document.getElementById("username");
+let emailInput = document.getElementById("email");
 let passwordInput = document.getElementById("password");
 let registerButton = document.getElementById("submit");
 let messageElement = document.getElementById("message");
@@ -7,10 +8,11 @@ registerButton.addEventListener("click", async (e) => {
     e.preventDefault(); // Prevent form from submitting normally
     
     let user = usernameInput.value;
+    let email = emailInput.value;
     let pass = passwordInput.value;
 
     // Basic validation
-    if (!user || !pass) {
+    if (!user || !pass || !email) {
         showMessage("Please enter username and password", true);
         return;
     }
@@ -27,6 +29,7 @@ registerButton.addEventListener("click", async (e) => {
             },
             body: JSON.stringify({
                 username: user,
+                email: email,
                 password: pass
             })
         });
