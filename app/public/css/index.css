@@ -1,0 +1,196 @@
+/* Code Playground Styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 1rem;
+}
+
+/* Main container spans most of viewport */
+.container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 1300px;
+  display: flex;
+  flex-direction: column;
+  height: 90vh;
+}
+
+h1 {
+  color: #333;
+  font-size: 1.75rem;
+}
+
+.welcome-message {
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.status-ready {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: #28a745;
+  color: white;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  font-weight: 500;
+}
+
+/* Two-column layout takes most of the space */
+.editor-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1.5rem;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.editor-panel,
+.output-panel {
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.editor-title {
+  font-weight: 600;
+  color: #495057;
+}
+
+.editor-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: #e9ecef;
+  color: #495057;
+}
+
+/* Make editor fill most of column */
+.editor-surface {
+  flex: 1;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background: #ffffff;
+  min-height: 400px;
+  overflow: hidden;
+}
+
+/* Buttons */
+button {
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Run button area */
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+/* Output console fills the output panel */
+.output-console {
+  flex: 1;
+  background: #1a1b26;
+  color: #f8f9fa;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-family: "Fira Code", Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-size: 0.9rem;
+  overflow-y: auto;
+  border: 1px solid #00000020;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Developer Navigation smaller and fixed at bottom */
+.dev-nav {
+  margin-top: 1rem;
+  background: #fff3cd;
+  border: 2px dashed #ffc107;
+  border-radius: 8px;
+  padding: 1rem;
+  flex-shrink: 0;
+}
+
+.dev-nav h2 {
+  color: #856404;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.dev-nav-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 1.5rem;
+}
+
+.dev-nav-list li {
+  border: none;
+}
+
+.dev-nav-list a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.dev-nav-list a:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
