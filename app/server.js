@@ -55,6 +55,32 @@ app.get('/', (req, res) => {
   }
 });
 
+//for judge0
+app.post("/run", async (req, res) => {
+  const { source_code, language_id } = req.body;
+
+  try {
+    const response = await fetch(
+      `${process.env.JUDGE_API_URL}/submissions?base64_encoded=false&wait=true`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-RapidAPI-Key": process.env.JUDGE_API_KEY,
+          "X-RapidAPI-Host": process.env.JUDGE_API_HOST,
+        },
+        body: JSON.stringify({ source_code, language_id }),
+      }
+    );
+
+    const result = await response.json();
+    res.json(result);
+  } catch (err) {
+    console.error("Judge0 error:", err);
+    res.status(500).json({ error: "Error calling Judge0" });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
