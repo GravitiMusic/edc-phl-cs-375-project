@@ -34,6 +34,7 @@ h1 {
   font-size: 1.75rem;
 }
 
+/* (Unused right now but harmless) */
 .welcome-message {
   color: #666;
   font-size: 1rem;
@@ -49,6 +50,36 @@ h1 {
   font-size: 0.75rem;
   margin-left: 0.5rem;
   font-weight: 500;
+}
+
+/* Top bar for title + theme toggle */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: #111827;
+  color: #f9fafb;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.4);
 }
 
 /* Two-column layout takes most of the space */
@@ -105,6 +136,12 @@ h1 {
   background: #ffffff;
   min-height: 400px;
   overflow: hidden;
+  display: flex;           /* so child can stretch */
+}
+
+/* Let CodeMirror fill the editor-surface */
+.editor-surface .cm-editor {
+  flex: 1;
 }
 
 /* Buttons */
@@ -193,4 +230,21 @@ button {
 .dev-nav-list a:hover {
   color: #764ba2;
   text-decoration: underline;
+}
+
+/* ===== Dark mode ONLY for the editor area ===== */
+
+.editor-surface.dark {
+  background: #0d1117;
+  border-color: #1f2937;
+}
+
+.editor-surface.dark .cm-editor {
+  background-color: #0d1117 !important;
+  color: #e5e7eb !important;
+}
+
+.editor-surface.dark .cm-gutters {
+  background-color: #0d1117 !important;
+  color: #8b949e !important;
 }
