@@ -10,10 +10,8 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
+  margin: 0;
+  padding: 0;
 }
 
 .container {
@@ -23,6 +21,15 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   max-width: 600px;
   width: 100%;
+  margin: 2rem auto;
+}
+
+.main-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* center the container horizontally */
+  justify-content: flex-start;
+  padding-top: 2rem; /* space below navbar */
 }
 
 h1 {
