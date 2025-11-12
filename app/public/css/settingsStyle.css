@@ -16,59 +16,6 @@ body {
   flex-direction: column;
 }
 
-/* Header */
-.settings-header {
-  background-color: white;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid #dadce0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.settings-header h1 {
-  font-size: 1.5rem;
-  font-weight: 400;
-  color: #202124;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.icon-button {
-  background: none;
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  transition: background-color 0.2s;
-}
-
-.icon-button:hover {
-  background-color: #f1f3f4;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4e54c8, #8f94fb);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  cursor: pointer;
-}
-
 /* Main Content Layout */
 .settings-content {
   display: flex;
@@ -259,11 +206,152 @@ body {
   color: #1967d2;
   font-weight: 500;
   transition: all 0.2s;
+  font-family: inherit;
 }
 
 .edit-button:hover {
   background-color: #f8f9fa;
   border-color: #1967d2;
+}
+
+/* Edit Mode Styles */
+.setting-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 2px solid #1967d2;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  margin-top: 0.25rem;
+}
+
+.setting-input:focus {
+  outline: none;
+  border-color: #1557b0;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.save-button, .cancel-button {
+  padding: 0.5rem 1.25rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: none;
+  font-family: inherit;
+}
+
+.save-button {
+  background-color: #1967d2;
+  color: white;
+}
+
+.save-button:hover {
+  background-color: #1557b0;
+}
+
+.cancel-button {
+  background-color: transparent;
+  border: 1px solid #dadce0;
+  color: #5f6368;
+}
+
+.cancel-button:hover {
+  background-color: #f1f3f4;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 2rem;
+  color: #5f6368;
+}
+
+/* Password Change Form */
+.password-form {
+  max-width: 500px;
+}
+
+.input-group {
+  margin-bottom: 1.25rem;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #202124;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #1967d2;
+  box-shadow: 0 0 0 2px rgba(25, 103, 210, 0.1);
+}
+
+.password-requirements {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #5f6368;
+  line-height: 1.4;
+}
+
+.message {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  display: none;
+}
+
+.message.success {
+  background-color: #e6f4ea;
+  color: #137333;
+  border: 1px solid #c6e8d0;
+  display: block;
+}
+
+.message.error {
+  background-color: #fce8e6;
+  color: #c5221f;
+  border: 1px solid #f4c7c3;
+  display: block;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.secondary-button {
+  background-color: transparent;
+  border: 1px solid #dadce0;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #5f6368;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.secondary-button:hover {
+  background-color: #f1f3f4;
 }
 
 /* Feature Card */
@@ -378,14 +466,6 @@ body {
 
   .cards-grid {
     grid-template-columns: 1fr;
-  }
-
-  .settings-header {
-    padding: 1rem;
-  }
-
-  .settings-header h1 {
-    font-size: 1.2rem;
   }
 }
 

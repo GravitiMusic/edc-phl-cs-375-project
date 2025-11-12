@@ -21,6 +21,8 @@ const pool = new Pool({
 const ADMIN_CREDENTIALS = {
   username: 'admin',
   email: 'admin@oneup.dev',
+  name: 'Admin User',
+  phone: '+1 (555) 123-4567',
   password: 'admin',  // Simple password for development
 };
 
@@ -46,20 +48,25 @@ async function seedDatabase() {
       // Create admin account
       console.log('👤 Creating admin account...');
       const result = await pool.query(
-        'INSERT INTO users (username, email, password, created_at) VALUES ($1, $2, $3, NOW()) RETURNING id, username, email',
-        [ADMIN_CREDENTIALS.username, ADMIN_CREDENTIALS.email, hashedPassword]
+        'INSERT INTO users (username, email, name, phone, password, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id, username, email, name, phone',
+        [ADMIN_CREDENTIALS.username, ADMIN_CREDENTIALS.email, ADMIN_CREDENTIALS.name, ADMIN_CREDENTIALS.phone, hashedPassword]
       );
 
       console.log('✅ Admin account created successfully!');
       console.log(`   ID: ${result.rows[0].id}`);
       console.log(`   Username: ${result.rows[0].username}`);
       console.log(`   Email: ${result.rows[0].email}`);
+      console.log(`   Name: ${result.rows[0].name}`);
+      console.log(`   Phone: ${result.rows[0].phone}`);
     }
 
-    console.log('\n📋 Login credentials for testing:');
+    console.log('\n📋 Admin account details for testing:');
     console.log('   ================================');
     console.log(`   Username: ${ADMIN_CREDENTIALS.username}`);
     console.log(`   Password: ${ADMIN_CREDENTIALS.password}`);
+    console.log(`   Email:    ${ADMIN_CREDENTIALS.email}`);
+    console.log(`   Name:     ${ADMIN_CREDENTIALS.name}`);
+    console.log(`   Phone:    ${ADMIN_CREDENTIALS.phone}`);
     console.log('   ================================');
     console.log('\n✨ Seed completed successfully!\n');
 

@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+<html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login Page</title>
+  <title>Register Page</title>
   <link rel="stylesheet" href="../css/loginStyle.css" />
 </head>
 <body>
@@ -10,28 +11,40 @@
     <h1>Register</h1>
     <form id="registerForm">
       <div class="input-group">
+        <label for="name">Full Name (Optional)</label>
+        <input type="text" id="name" placeholder="Enter your name" />
+      </div>
+
+      <div class="input-group">
         <label for="username">Username</label>
         <input type="text" id="username" placeholder="Enter username" required />
       </div>
 
       <div class="input-group">
         <label for="email">Email</label>
-        <input type="text" id="email" placeholder="Enter email" required />
+        <input type="email" id="email" placeholder="Enter email" required />
+      </div>
+
+      <div class="input-group">
+        <label for="phone">Phone Number (Optional)</label>
+        <input type="tel" id="phone" placeholder="Enter phone number" />
       </div>
 
       <div class="input-group">
         <label for="password">Password</label>
         <input type="password" id="password" placeholder="Enter password" required />
+        <small class="password-requirements">
+          Must be at least 8 characters with uppercase, lowercase, and number
+        </small>
       </div>
 
       <button id="submit" type="submit">Register</button>
       <p id="message"></p>
     </form>
-    <p><a href="login.html"> Login </a></p>
-  </div>
-  <div class="register-account">
+    <p><a href="login.html">Login</a></p>
   </div>
 
+  <script src="../js/csrf.js"></script>
   <script src="../js/register.js"></script>
 </body>
 </html>

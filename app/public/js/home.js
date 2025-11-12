@@ -1,9 +1,183 @@
 /**
- * Home Page JavaScript
- * Fetches and displays user info from session
+ * Home Page JavaScript - Modern & Feature Rich
+ * Handles authentication, CodeMirror editor, and daily challenge
  */
 
-// Check if user is logged in when page loads
+import { EditorState } from "https://esm.sh/@codemirror/state";
+import { EditorView, basicSetup } from "https://esm.sh/codemirror";
+import { python } from "https://esm.sh/@codemirror/lang-python";
+import { javascript } from "https://esm.sh/@codemirror/lang-javascript";
+import { java } from "https://esm.sh/@codemirror/lang-java";
+import { cpp } from "https://esm.sh/@codemirror/lang-cpp";
+
+let editor = null;
+let currentLanguageId = 71; // Default to Python
+
+// Language configurations
+const languageConfigs = {
+  71: { name: 'Python', extension: python(), defaultCode: 'def two_sum(nums, target):\n    # Write your solution here\n    pass\n\n# Test your code\nnums = [2, 7, 11, 15]\ntarget = 9\nprint(two_sum(nums, target))' },
+  63: { name: 'JavaScript', extension: javascript(), defaultCode: 'function twoSum(nums, target) {\n    // Write your solution here\n}\n\n// Test your code\nconst nums = [2, 7, 11, 15];\nconst target = 9;\nconsole.log(twoSum(nums, target));' },
+  62: { name: 'Java', extension: java(), defaultCode: 'class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Write your solution here\n        return new int[]{};\n    }\n    \n    public static void main(String[] args) {\n        Solution sol = new Solution();\n        int[] nums = {2, 7, 11, 15};\n        int target = 9;\n        int[] result = sol.twoSum(nums, target);\n        System.out.println(java.util.Arrays.toString(result));\n    }\n}' },
+  50: { name: 'C', extension: cpp(), defaultCode: '#include <stdio.h>\n\nvoid two_sum(int* nums, int numsSize, int target) {\n    // Write your solution here\n}\n\nint main() {\n    int nums[] = {2, 7, 11, 15};\n    int target = 9;\n    two_sum(nums, 4, target);\n    return 0;\n}' },
+  54: { name: 'C++', extension: cpp(), defaultCode: '#include <iostream>\n#include <vector>\nusing namespace std;\n\nvector<int> twoSum(vector<int>& nums, int target) {\n    // Write your solution here\n    return {};\n}\n\nint main() {\n    vector<int> nums = {2, 7, 11, 15};\n    int target = 9;\n    vector<int> result = twoSum(nums, target);\n    for (int i : result) {\n        cout << i << " ";\n    }\n    return 0;\n}' }
+};
+
+/**
+ * Initialize the CodeMirror editor
+ */
+function initializeEditor() {
+  const editorContainer = document.getElementById('codeEditor');
+  
+  editor = new EditorView({
+    state: EditorState.create({
+      doc: languageConfigs[71].defaultCode,
+      extensions: [basicSetup, languageConfigs[71].extension],
+    }),
+    parent: editorContainer,
+  });
+
+  console.log('✅ Code editor initialized');
+}
+
+/**
+ * Change programming language
+ */
+function changeLanguage(languageId) {
+  currentLanguageId = parseInt(languageId);
+  const config = languageConfigs[currentLanguageId];
+  
+  if (!config) {
+    console.error('Unknown language ID:', languageId);
+    return;
+  }
+
+  // Destroy old editor
+  if (editor) {
+    editor.destroy();
+  }
+
+  // Create new editor with appropriate language
+  const editorContainer = document.getElementById('codeEditor');
+  editor = new EditorView({
+    state: EditorState.create({
+      doc: config.defaultCode,
+      extensions: [basicSetup, config.extension],
+    }),
+    parent: editorContainer,
+  });
+
+  console.log(`✅ Switched to ${config.name}`);
+}
+
+/**
+ * Run the code
+ */
+async function runCode() {
+  const code = editor.state.doc.toString();
+  const outputEl = document.getElementById('codeOutput');
+  const runBtn = document.getElementById('runCodeBtn');
+  
+  // Disable button and show loading
+  runBtn.disabled = true;
+  runBtn.innerHTML = '<span class="btn-icon">⏳</span>Running...';
+  outputEl.textContent = "⏳ Your code is being executed...";
+
+  try {
+    const response = await window.csrfProtection.protectedFetch("/run", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source_code: code,
+        language_id: currentLanguageId,
+      }),
+    });
+
+    // Check if user is authenticated
+    if (response.status === 401) {
+      outputEl.textContent = "🔒 You must be logged in to run code. Redirecting...";
+      setTimeout(() => {
+        window.location.href = "/pages/login.html";
+      }, 2000);
+      return;
+    }
+
+    const result = await response.json();
+
+    if (result.stdout) {
+      outputEl.textContent = "✅ Output:\n\n" + result.stdout;
+    } else if (result.stderr) {
+      outputEl.textContent = "⚠️ Error:\n\n" + result.stderr;
+    } else if (result.compile_output) {
+      outputEl.textContent = "💥 Compilation Error:\n\n" + result.compile_output;
+    } else {
+      outputEl.textContent = "❓ No output received.";
+    }
+  } catch (err) {
+    outputEl.textContent = "❌ Request failed:\n\n" + err.message;
+    console.error('Error running code:', err);
+  } finally {
+    // Re-enable button
+    runBtn.disabled = false;
+    runBtn.innerHTML = '<span class="btn-icon">▶</span>Run Code';
+  }
+}
+
+/**
+ * Submit the solution
+ */
+async function submitSolution() {
+  const code = editor.state.doc.toString();
+  const submitBtn = document.getElementById('submitCodeBtn');
+  
+  if (!code.trim()) {
+    alert('Please write some code before submitting!');
+    return;
+  }
+
+  // Disable button
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="btn-icon">⏳</span>Submitting...';
+
+  try {
+    // For now, just show a success message
+    // In the future, this would submit to your backend
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    alert('🎉 Solution submitted successfully!\n\nThis is a placeholder. In the full version, your solution would be tested against multiple test cases.');
+    
+    console.log('✅ Solution submitted');
+  } catch (err) {
+    alert('Failed to submit solution. Please try again.');
+    console.error('Error submitting solution:', err);
+  } finally {
+    // Re-enable button
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<span class="btn-icon">✓</span>Submit Solution';
+  }
+}
+
+/**
+ * Format and display the current date
+ */
+function displayChallengeDate() {
+  const dateEl = document.getElementById('challengeDate');
+  const today = new Date();
+  
+  const options = { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  };
+  
+  dateEl.textContent = today.toLocaleDateString('en-US', options);
+}
+
+/**
+ * Check if user is logged in when page loads
+ */
 async function checkAuth() {
   try {
     const response = await fetch('/auth/me');
@@ -31,18 +205,64 @@ function displayUserInfo(user) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('content').style.display = 'block';
 
-  // Fill in user info
-  document.getElementById('userId').textContent = user.id;
-  document.getElementById('username').textContent = user.username;
+  // Display username in hero section
+  const usernameDisplay = document.getElementById('usernameDisplay');
+  if (usernameDisplay) {
+    usernameDisplay.textContent = user.username;
+  }
+
+  // Initialize the editor now that the page is visible
+  initializeEditor();
+  displayChallengeDate();
+
+  // Set up event listeners
+  setupEventListeners();
+
+  // In the future, fetch user stats from API
+  // For now, showing placeholder data
+  updateStats({
+    challengesCompleted: 0,
+    currentStreak: 0,
+    totalPoints: 0,
+    userRank: 'N/A'
+  });
 
   console.log('✅ User info loaded:', user);
 }
 
 /**
- * Go to account settings page
+ * Update user statistics
  */
-function goToAccount() {
-  window.location.href = '/pages/account-settings.html';
+function updateStats(stats) {
+  document.getElementById('challengesCompleted').textContent = stats.challengesCompleted;
+  document.getElementById('currentStreak').textContent = stats.currentStreak;
+  document.getElementById('totalPoints').textContent = stats.totalPoints;
+  document.getElementById('userRank').textContent = '#' + stats.userRank;
+}
+
+/**
+ * Set up event listeners
+ */
+function setupEventListeners() {
+  // Language selector
+  const languageSelect = document.getElementById('languageSelect');
+  if (languageSelect) {
+    languageSelect.addEventListener('change', (e) => {
+      changeLanguage(e.target.value);
+    });
+  }
+
+  // Run code button
+  const runCodeBtn = document.getElementById('runCodeBtn');
+  if (runCodeBtn) {
+    runCodeBtn.addEventListener('click', runCode);
+  }
+
+  // Submit solution button
+  const submitCodeBtn = document.getElementById('submitCodeBtn');
+  if (submitCodeBtn) {
+    submitCodeBtn.addEventListener('click', submitSolution);
+  }
 }
 
 /**
@@ -78,6 +298,9 @@ async function logout() {
     alert('Failed to log out. Please try again.');
   }
 }
+
+// Make logout function globally available
+window.logout = logout;
 
 // Check authentication when page loads
 checkAuth();
