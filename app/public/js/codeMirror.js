@@ -20,7 +20,7 @@ runButton.addEventListener("click", async () => {
 
   try {
     
-    const response = await fetch("/run", {
+    const response = await window.csrfProtection.protectedFetch("/run", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -30,6 +30,15 @@ runButton.addEventListener("click", async () => {
         language_id: 71, // code for python
       }),
     });
+
+    // Check if user is authenticated
+    if (response.status === 401) {
+      outputEl.textContent = "🔒 You must be logged in to run code. Redirecting...";
+      setTimeout(() => {
+        window.location.href = "/pages/login.html";
+      }, 2000);
+      return;
+    }
 
     const result = await response.json();
 

@@ -17,8 +17,11 @@ function requireAuth(req, res, next) {
   }
   
   // User is NOT authenticated
-  // If API request, send JSON error
-  if (req.path.startsWith('/api/')) {
+  // If API/AJAX request (JSON expected), send JSON error
+  if (req.path.startsWith('/api/') || 
+      req.path.startsWith('/run') || 
+      req.path.startsWith('/auth/') ||
+      req.headers.accept?.includes('application/json')) {
     return res.status(401).json({ 
       error: 'Unauthorized',
       message: 'Please log in to access this resource' 

@@ -20,7 +20,7 @@ loginButton.addEventListener("click", async (e) => {
     loginButton.textContent = "Logging in...";
 
     try {
-        const response = await fetch("/auth/login", {
+        const response = await window.csrfProtection.protectedFetch("/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

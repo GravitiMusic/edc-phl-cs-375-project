@@ -10,67 +10,209 @@
 <body>
   <!-- Navigation Bar -->
   <nav class="navbar">
-    <ul>
-      <li><a href="home.html">Home</a></li>
-      <li><a href="index.html">Index</a></li>
-      <li><a href="account-settings.html">Account Settings</a></li>
-    </ul>
-  </nav>
-
-  <div class="main-content-wrapper">
-    <div class="container">
-      <!-- Loading state -->
-      <div id="loading" class="loading">
-        Loading...
-      </div>
-
-      <!-- Main content (hidden until loaded) -->
-      <div id="content" style="display: none;">
-        <h1>Welcome Back! 👋</h1>
-        <p class="welcome-message">
-          You're successfully logged in to OneUp
-          <span class="status-badge">✓ Authenticated</span>
-        </p>
-
-        <div class="user-info">
-          <h2>Your Account Information</h2>
-          <div class="info-row">
-            <span class="info-label">User ID:</span>
-            <span class="info-value" id="userId">-</span>
+    <div class="navbar-container">
+      <a href="home.html" class="navbar-brand">OneUp</a>
+      <button class="navbar-toggle" aria-label="Toggle navigation">☰</button>
+      <ul>
+        <li><a href="home.html" class="active">Home</a></li>
+        <li><a href="index.html">Index</a></li>
+        <li><a href="account-settings.html">Account Settings</a></li>
+      </ul>
+      <div class="navbar-actions">
+        <div class="navbar-profile">
+          <div class="navbar-profile-circle" id="navbarProfileCircle">
+            <span id="navbarProfileInitial">U</span>
           </div>
-          <div class="info-row">
-            <span class="info-label">Username:</span>
-            <span class="info-value" id="username">-</span>
+          <div class="navbar-dropdown" id="navbarDropdown">
+            <div class="navbar-dropdown-header">
+              <div class="navbar-dropdown-username" id="navbarDropdownUsername">Loading...</div>
+            </div>
+            <ul class="navbar-dropdown-menu">
+              <li class="navbar-dropdown-item">
+                <a href="account-settings.html" class="navbar-dropdown-link">
+                  <span class="navbar-dropdown-icon">⚙️</span>
+                  <span>Account Settings</span>
+                </a>
+              </li>
+              <li class="navbar-dropdown-divider"></li>
+              <li class="navbar-dropdown-item">
+                <a class="navbar-dropdown-link logout" onclick="logout()">
+                  <span class="navbar-dropdown-icon">🚪</span>
+                  <span>Logout</span>
+                </a>
+              </li>
+            </ul>
           </div>
-          <div class="info-row">
-            <span class="info-label">Session Status:</span>
-            <span class="info-value">Active (stored in PostgreSQL)</span>
-          </div>
-        </div>
-
-      <!-- Developer Navigation -->
-      <div class="dev-nav">
-        <h2>🔧 Developer Navigation</h2>
-        <ul class="dev-nav-list">
-          <li><a href="/pages/home.html">🏠 Home</a></li>
-          <li><a href="/pages/index.html"> INDEX</a></li>
-          <li><a href="/pages/login.html">🔑 Login</a></li>
-        </ul>
-      </div>
-
-        <div class="actions">
-          <button class="btn-primary" onclick="goToAccount()">
-            Account Settings
-          </button>
-          <button class="btn-secondary" onclick="logout()">
-            Log Out
-          </button>
         </div>
       </div>
     </div>
+  </nav>
+
+  <!-- Loading state -->
+  <div id="loading" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>Loading your coding journey...</p>
   </div>
 
-  <script src="../js/home.js"></script>
+  <!-- Main content (hidden until loaded) -->
+  <div id="content" class="main-content" style="display: none;">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">Welcome to <span class="brand-highlight">OneUp</span></h1>
+        <p class="hero-subtitle">Level up your coding skills, one challenge at a time</p>
+        <p class="hero-greeting">Hello, <span id="usernameDisplay">Coder</span>! Ready to tackle today's challenge?</p>
+      </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-value" id="challengesCompleted">0</div>
+            <div class="stat-label">Challenges Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-value" id="currentStreak">0</div>
+            <div class="stat-label">Day Streak</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-value" id="totalPoints">0</div>
+            <div class="stat-label">Total Points</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-value" id="userRank">#N/A</div>
+            <div class="stat-label">Global Rank</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Daily Challenge Section -->
+    <section class="daily-challenge-section">
+      <div class="container-wide">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="title-icon">📅</span>
+            Daily Challenge
+          </h2>
+          <div class="challenge-date" id="challengeDate">Loading...</div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-header">
+            <div class="challenge-info">
+              <h3 class="challenge-title" id="challengeTitle">Two Sum</h3>
+              <div class="challenge-meta">
+                <span class="difficulty-badge difficulty-medium">Medium</span>
+                <span class="challenge-points">+50 points</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="challenge-body">
+            <div class="challenge-description">
+              <h4>Problem Description</h4>
+              <p id="challengeDescription">
+                Given an array of integers <code>nums</code> and an integer <code>target</code>, 
+                return indices of the two numbers such that they add up to <code>target</code>.
+              </p>
+              <div class="challenge-example">
+                <strong>Example:</strong>
+                <pre>Input: nums = [2,7,11,15], target = 9
+Output: [0,1]
+Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].</pre>
+              </div>
+            </div>
+
+            <div class="challenge-editor">
+              <div class="editor-header">
+                <span class="editor-title">Code Editor</span>
+                <select id="languageSelect" class="language-select">
+                  <option value="71">Python</option>
+                  <option value="63">JavaScript</option>
+                  <option value="62">Java</option>
+                  <option value="50">C</option>
+                  <option value="54">C++</option>
+                </select>
+              </div>
+              <div id="codeEditor" class="code-editor-container"></div>
+              <div class="editor-actions">
+                <button id="runCodeBtn" class="btn-run">
+                  <span class="btn-icon">▶</span>
+                  Run Code
+                </button>
+                <button id="submitCodeBtn" class="btn-submit">
+                  <span class="btn-icon">✓</span>
+                  Submit Solution
+                </button>
+              </div>
+              <div class="output-section">
+                <div class="output-header">Output</div>
+                <pre id="codeOutput" class="code-output">Click "Run Code" to see your output here...</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+      <div class="container">
+        <h2 class="section-title-centered">Why OneUp?</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">💪</div>
+            <h3 class="feature-title">Daily Challenges</h3>
+            <p class="feature-description">Fresh coding problems every day to keep your skills sharp</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <h3 class="feature-title">Instant Feedback</h3>
+            <p class="feature-description">Run your code instantly and see results in real-time</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3 class="feature-title">Track Progress</h3>
+            <p class="feature-description">Monitor your improvement with detailed statistics and rankings</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <h3 class="feature-title">Multiple Languages</h3>
+            <p class="feature-description">Practice in Python, JavaScript, Java, C++, and more</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Actions Section -->
+    <section class="quick-actions-section">
+      <div class="container">
+        <div class="quick-actions-card">
+          <h3>Ready for More?</h3>
+          <p>Explore our full library of coding challenges and level up your skills</p>
+          <div class="quick-actions-buttons">
+            <button class="btn-action-primary" onclick="window.location.href='index.html'">
+              Browse All Challenges
+            </button>
+            <button class="btn-action-secondary" onclick="window.location.href='account-settings.html'">
+              View Profile
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="../js/csrf.js"></script>
+  <script src="../js/navbar.js"></script>
+  <script type="module" src="../js/home.js"></script>
 </body>
 </html>
 
