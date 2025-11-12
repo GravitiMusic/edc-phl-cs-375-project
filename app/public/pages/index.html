@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Code Playground - OneUp</title>
+  <link rel="stylesheet" href="../css/index.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Daily Challenge 💻</h1>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Index</title>
@@ -48,9 +56,33 @@
 	</nav>
 	<h1>Welcome!</h1>
 
-	<div id = "editor"></div>
-	<button id = "runButton">Run Codez</button>
-	<pre id = "output"></pre>
+    <div class="editor-layout">
+      <section class="editor-panel">
+
+        <div id="editor" class="editor-surface"></div>
+
+        <div class="editor-actions">
+          <button id="runButton" class="btn-primary">▶ Run Code</button>
+        </div>
+      </section>
+
+      <section class="output-panel">
+        <div class="editor-header">
+          <span class="editor-title">Output Console</span>
+        </div>
+        <pre id="output" class="output-console">// Output will appear here</pre>
+      </section>
+    </div>
+
+    <div class="dev-nav">
+      <h2>🔧 Developer Navigation</h2>
+      <ul class="dev-nav-list">
+        <li><a href="/pages/home.html">🏠 Home</a></li>
+        <li><a href="/pages/index.html">💻 Code Playground</a></li>
+        <li><a href="/pages/login.html">🔑 Login</a></li>
+      </ul>
+    </div>
+  </div>
 
 	<script src="../js/csrf.js"></script>
 	<script src="../js/navbar.js"></script>
