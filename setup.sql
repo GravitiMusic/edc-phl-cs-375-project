@@ -21,7 +21,12 @@ CREATE TABLE users (
     phone VARCHAR(20),
     password VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    rank INTEGER DEFAULT 99999,
+    total_points INTEGER DEFAULT 0,
+    challenges_completed INTEGER DEFAULT 0,
+    day_streak INTEGER DEFAULT 0
 );
 CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_users_email ON users(email);
