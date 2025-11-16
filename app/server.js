@@ -46,6 +46,10 @@ app.use(attachUser);
 const authRoutes = require('./routes/auth');
 app.use('/auth', authRoutes);
 
+// Challenges API
+const challengesRoutes = require('./routes/challenges');
+app.use('/challenges', challengesRoutes);
+
 // Root redirect - send to home if authenticated, login otherwise
 app.get('/', (req, res) => {
   if (req.session && req.session.userId) {
