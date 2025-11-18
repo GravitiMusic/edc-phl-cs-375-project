@@ -87,6 +87,9 @@ app.get('/csrf-token', (req, res) => {
 const authRoutes = require('./routes/auth');
 app.use('/auth', authRoutes);
 
+const statsRoutes = require('./routes/stats');
+app.use('/stats', statsRoutes);
+
 // Root redirect - send to home if authenticated, login otherwise
 app.get('/', (req, res) => {
   if (req.session && req.session.userId) {

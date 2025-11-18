@@ -26,6 +26,13 @@ const ADMIN_CREDENTIALS = {
   password: 'admin',  // Simple password for development
 };
 
+async function populateFakeUsers() {
+  await pool.query(
+    'INSERT INTO users (username, password, rank, total_points, challenges_completed, day_streak) VALUES ($1, $2, $3, $4, $5, $6)',
+    ["John", "12345", 2, 1500, 30, 5]
+  );
+}
+
 async function seedDatabase() {
   console.log('🌱 Starting database seed...\n');
 
@@ -80,4 +87,7 @@ async function seedDatabase() {
 
 // Run the seed function
 seedDatabase();
+
+// Populate fake users to test leaderboard
+populateFakeUsers();
 
