@@ -87,6 +87,9 @@ app.get('/csrf-token', (req, res) => {
 const authRoutes = require('./routes/auth');
 app.use('/auth', authRoutes);
 
+// Challenges API
+const challengesRoutes = require('./routes/challenges');
+app.use('/challenges', challengesRoutes);
 const statsRoutes = require('./routes/stats');
 app.use('/stats', statsRoutes);
 

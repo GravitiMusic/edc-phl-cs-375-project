@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../css/navbar.css" />
+    <link rel="stylesheet" href="../css/challengesStyle.css" />
+  </head>
+
+  <body>
+    <nav class="navbar">
+    <ul>
+      <li><a href="home.html">Home</a></li>
+      <li><a href="index.html">Index</a></li>
+      <li><a href="challenges.html">Challenges</a></li>
+      <li><a href="account-settings.html">Account Settings</a></li>
+    </ul>
+  </nav>
+
+  <header>
+    <h1>Challenges</h1>
+  </header>
+  
+  <main class="container">
+    <section class="filters-section">
+      <div class="filters">
+        <div class="filter-group">
+          <input 
+            type="text" 
+            id="search-input" 
+            class="search-bar" 
+            placeholder="Search challenges by title..."
+          />
+        </div>
+        <div class="filter-group">
+          <select id="difficulty-filter" class="difficulty-select">
+            <option value="">All Difficulties</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <table id="challenges-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Difficulty</th>
+            <th>Created At</th>
+          </tr>
+        </thead>
+        <tbody id="challenges-body">
+          <!-- Rows are injected here by /js/challenges.js -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="../js/challenges.js"></script>
+  </body>
+</html>
