@@ -1,0 +1,79 @@
+
+/* Leaderboard styles */
+.leaderboard-section {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.leaderboard-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  border: 1px solid rgba(15, 23, 42, 0.04);
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  color: #2d3748;
+}
+
+.leaderboard-table thead th {
+  text-align: left;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(180deg, #f7f8fb 0%, #ffffff 100%);
+  border-bottom: 1px solid #edf2f7;
+  color: #1f2937;
+}
+
+.leaderboard-table tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.leaderboard-table tbody tr:hover {
+  background: #fbfdff;
+}
+
+.leaderboard-table tbody tr:nth-child(even) {
+  background: #ffffff;
+}
+
+.leaderboard-table .rank {
+  width: 72px;
+  text-align: center;
+  font-weight: 700;
+  color: #4a5568;
+}
+
+.leaderboard-username {
+  font-weight: 600;
+  color: #2b2f36;
+}
+
+.leaderboard-score {
+  font-weight: 700;
+  color: #1a202c;
+  text-align: right;
+}
+
+.leaderboard-meta {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+/* Responsive: stack rows on small screens */
+@media (max-width: 640px) {
+  .leaderboard-table thead { display: none; }
+  .leaderboard-table, .leaderboard-table tbody, .leaderboard-table tr, .leaderboard-table td { display: block; width: 100%; }
+  .leaderboard-table tr { margin-bottom: 0.75rem; border-radius: 8px; overflow: hidden; border: 1px solid #edf2f7; }
+  .leaderboard-table td { padding: 0.6rem 0.75rem; border: none; }
+  .leaderboard-table td[data-label]::before { content: attr(data-label) ": "; font-weight: 600; color: #374151; display: inline-block; width: 110px; }
+  .leaderboard-table .rank { text-align: left; }
+}

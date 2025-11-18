@@ -1,5 +1,7 @@
+let nameInput = document.getElementById("name");
 let usernameInput = document.getElementById("username");
 let emailInput = document.getElementById("email");
+let phoneInput = document.getElementById("phone");
 let passwordInput = document.getElementById("password");
 let registerButton = document.getElementById("submit");
 let messageElement = document.getElementById("message");
@@ -7,29 +9,33 @@ let messageElement = document.getElementById("message");
 registerButton.addEventListener("click", async (e) => {
     e.preventDefault(); // Prevent form from submitting normally
     
-    let user = usernameInput.value;
-    let email = emailInput.value;
+    let name = nameInput.value.trim();
+    let user = usernameInput.value.trim();
+    let email = emailInput.value.trim();
+    let phone = phoneInput.value.trim();
     let pass = passwordInput.value;
 
     // Basic validation
     if (!user || !pass || !email) {
-        showMessage("Please enter username and password", true);
+        showMessage("Please enter username, email, and password", true);
         return;
     }
 
-    // Disable button while logging in
+    // Disable button while registering
     registerButton.disabled = true;
     registerButton.textContent = "Registering...";
 
     try {
-        const response = await fetch("/auth/register", {
+        const response = await window.csrfProtection.protectedFetch("/auth/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
+                name: name || null,
                 username: user,
                 email: email,
+                phone: phone || null,
                 password: pass
             })
         });

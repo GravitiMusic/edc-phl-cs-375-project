@@ -1,6 +1,6 @@
 body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #4e54c8, #8f94fb);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   height: 100vh;
   display: flex;
   justify-content: center;
@@ -45,20 +45,29 @@ input {
 button {
   width: 100%;
   padding: 0.7rem;
-  background-color: #4e54c8;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   border-radius: 6px;
   font-size: 1rem;
   cursor: pointer;
-  transition: 0.3s ease;
+  transition: all 0.2s;
 }
 
 button:hover {
-  background-color: #3e43a2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 #message {
   margin-top: 1rem;
   font-weight: 600;
+}
+
+.password-requirements {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #666;
+  line-height: 1.4;
 }
