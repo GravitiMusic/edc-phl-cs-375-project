@@ -1,50 +1,12 @@
-/* Challenges Page Styles */
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-}
-
-header {
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 2rem;
-  text-align: center;
-}
-
-header h1 {
-  color: #333;
-  font-size: 2rem;
-  font-weight: 600;
-}
-
-.container {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  max-width: 1000px;
-  width: 95%;
-  margin: 2rem auto;
-}
-
 section {
   overflow-x: auto;
 }
 
 /* Filter Section Styles */
 .filters-section {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
   border-bottom: 2px solid #e2e8f0;
 }
 

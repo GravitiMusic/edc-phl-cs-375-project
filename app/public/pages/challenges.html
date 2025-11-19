@@ -3,25 +3,59 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="../css/navbar.css" />
+    <link rel="stylesheet" href="../css/index.css" />
     <link rel="stylesheet" href="../css/challengesStyle.css" />
   </head>
 
   <body>
-    <nav class="navbar">
-    <ul>
-      <li><a href="home.html">Home</a></li>
-      <li><a href="index.html">Index</a></li>
-      <li><a href="challenges.html">Challenges</a></li>
-      <li><a href="account-settings.html">Account Settings</a></li>
-    </ul>
-  </nav>
-
-  <header>
+  <div class="container">
     <h1>Challenges</h1>
-  </header>
-  
-  <main class="container">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Challenges</title>
+    <link rel="stylesheet" href="../css/navbar.css" />
+
+    <nav class="navbar">
+      <div class="navbar-container">
+        <a href="home.html" class="navbar-brand">OneUp</a>
+        <button class="navbar-toggle" aria-label="Toggle navigation">☰</button>
+        <ul>
+          <li><a href="home.html">Home</a></li>
+          <li><a href="challenges.html" class="active">Challenges</a></li>
+          <li><a href="index.html">Index</a></li>
+          <li><a href="leaderboard.html">Leaderboard</a></li>
+          <li><a href="account-settings.html">Account Settings</a></li>
+        </ul>
+        <div class="navbar-actions">
+          <div class="navbar-profile">
+            <div class="navbar-profile-circle" id="navbarProfileCircle">
+              <span id="navbarProfileInitial">U</span>
+            </div>
+            <div class="navbar-dropdown" id="navbarDropdown">
+              <div class="navbar-dropdown-header">
+                <div class="navbar-dropdown-username" id="navbarDropdownUsername">Loading...</div>
+              </div>
+              <ul class="navbar-dropdown-menu">
+                <li class="navbar-dropdown-item">
+                  <a href="account-settings.html" class="navbar-dropdown-link">
+                    <span class="navbar-dropdown-icon">⚙️</span>
+                    <span>Account Settings</span>
+                  </a>
+                </li>
+                <li class="navbar-dropdown-divider"></li>
+                <li class="navbar-dropdown-item">
+                  <a class="navbar-dropdown-link logout" onclick="logout()">
+                    <span class="navbar-dropdown-icon">🚪</span>
+                    <span>Logout</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
     <section class="filters-section">
       <div class="filters">
         <div class="filter-group">
@@ -57,8 +91,9 @@
         </tbody>
       </table>
     </section>
-  </main>
+  </div>
 
+  <script src="../js/navbar.js"></script>
   <script src="../js/challenges.js"></script>
   </body>
 </html>
