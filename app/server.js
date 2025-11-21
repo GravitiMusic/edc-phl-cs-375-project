@@ -141,6 +141,77 @@ app.post("/run", requireAuth, codeExecutionLimiter, async (req, res) => {
   }
 });
 
+function buildEasySubtractHarness(userCode) {
+  return `
+${userCode}
+
+tests_passed = 0
+total_tests = 3
+
+def assert_equal(actual, expected, name):
+    global tests_passed
+    if actual == expected:
+        tests_passed += 1
+
+# Test cases
+assert_equal(subtract_numbers(10, 5), 5, "basic_1")
+assert_equal(subtract_numbers(7, 2), 5, "basic_2")
+assert_equal(subtract_numbers(3, 10), -7, "basic_3")
+
+print(f"{tests_passed}/{total_tests} tests passed")
+`;
+}
+
+// Example of testing code
+
+
+app.post("/challenge/run", async (req, res) => {
+  const { source_code, challengeId } = req.body;
+
+  try {
+    let wrappedCode;
+
+    if (challengeId === "easy_subtract") {
+      wrappedCode = buildEasySubtractHarness(source_code);
+    } else {
+      return res.status(400).json({ error: "Unknown challengeId" });
+    }
+
+    const response = await fetch(
+      `${process.env.JUDGE_API_URL}/submissions?base64_encoded=false&wait=true`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-RapidAPI-Key": process.env.JUDGE_API_KEY,
+          "X-RapidAPI-Host": process.env.JUDGE_API_HOST,
+        },
+        body: JSON.stringify({
+          source_code: wrappedCode,
+          language_id: 71, // Python
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    const stdout = (result.stdout || "").trim();
+    const lines = stdout.split("\n");
+    const summary = lines[lines.length - 1] || "No output";
+
+    res.json({
+      summary,       // e.g. "3/3 tests passed"
+      raw_stdout: stdout, // optional, for debugging
+    });
+  } catch (err) {
+    console.error("Challenge run error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
