@@ -115,6 +115,11 @@ app.get('/pages/account-settings.html', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'pages', 'account-settings.html'));
 });
 
+app.get('/pages/problems/:name', requireAuth, (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'pages', 'problems', req.params.name, req.params.name + '.html');
+  res.sendFile(filePath);
+});
+
 //for judge0 - requires authentication
 app.post("/run", requireAuth, codeExecutionLimiter, async (req, res) => {
   const { source_code, language_id } = req.body;
@@ -169,13 +174,13 @@ app.post("/challenge/run", async (req, res) => {
   const { source_code, challengeId } = req.body;
 
   try {
-    let wrappedCode;
+    // let wrappedCode;
 
-    if (challengeId === "easy_subtract") {
-      wrappedCode = buildEasySubtractHarness(source_code);
-    } else {
-      return res.status(400).json({ error: "Unknown challengeId" });
-    }
+    // if (challengeId === "easy_subtract") {
+    //   wrappedCode = buildEasySubtractHarness(source_code);
+    // } else {
+    //   return res.status(400).json({ error: "Unknown challengeId" });
+    // }
 
     const response = await fetch(
       `${process.env.JUDGE_API_URL}/submissions?base64_encoded=false&wait=true`,
@@ -187,7 +192,7 @@ app.post("/challenge/run", async (req, res) => {
           "X-RapidAPI-Host": process.env.JUDGE_API_HOST,
         },
         body: JSON.stringify({
-          source_code: wrappedCode,
+          source_code: source_code,
           language_id: 71, // Python
         }),
       }
