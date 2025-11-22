@@ -30,8 +30,16 @@ function initializeEditor() {
   
   editor = new EditorView({
     state: EditorState.create({
-      doc: languageConfigs[71].defaultCode,
-      extensions: [basicSetup, languageConfigs[71].extension],
+      doc: `def subtract_numbers(a, b):
+    """
+    This function should subtract b from a.
+    Right now it performs the wrong operation.
+    Fix the line below.
+    """
+    result = a + b  # TODO: change this to subtract instead of add
+    return result
+`,
+      extensions: [basicSetup, languageConfigs[71].extension], //python
     }),
     parent: editorContainer,
   });
@@ -83,14 +91,15 @@ async function runCode() {
   outputEl.textContent = "⏳ Your code is being executed...";
 
   try {
-    const response = await window.csrfProtection.protectedFetch("/run", {
+    const response = await window.csrfProtection.protectedFetch("/challenge/run", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         source_code: code,
-        language_id: currentLanguageId,
+        language_id: currentLanguageId,   // e.g. 71 for Python
+        challengeId: "easy_subtract",     // TODO: swap this for your real challenge id/slug
       }),
     });
 
@@ -105,14 +114,14 @@ async function runCode() {
 
     const result = await response.json();
 
-    if (result.stdout) {
-      outputEl.textContent = "✅ Output:\n\n" + result.stdout;
-    } else if (result.stderr) {
-      outputEl.textContent = "⚠️ Error:\n\n" + result.stderr;
-    } else if (result.compile_output) {
-      outputEl.textContent = "💥 Compilation Error:\n\n" + result.compile_output;
+    // Expecting backend to send something like:
+    // { summary: "3/3 tests passed", raw_stdout: "...", error: null }
+    if (result.summary) {
+      outputEl.textContent = `✅ ${result.summary}`;
+    } else if (result.error) {
+      outputEl.textContent = "⚠️ Error while running tests:\n\n" + result.error;
     } else {
-      outputEl.textContent = "❓ No output received.";
+      outputEl.textContent = "❓ No summary received from challenge runner.";
     }
   } catch (err) {
     outputEl.textContent = "❌ Request failed:\n\n" + err.message;

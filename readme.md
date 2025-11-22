@@ -36,7 +36,7 @@ The goal for this project is to have a working daily coding challenge game, wher
 **First time setup:**
 ```bash
 npm install                 # Install dependencies
-cp env.example .env        # Create config file (then edit with your password)
+cp env.example .env        # Create config file (then edit with your password + api key)
 npm run reset              # Create database + admin user
 npm start                  # Start server → http://localhost:3000
 ```
