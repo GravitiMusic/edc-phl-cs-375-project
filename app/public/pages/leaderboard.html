@@ -59,6 +59,14 @@
 	</nav>
 
     <div class="leaderboard-section">
+      <div class="leaderboard-controls">
+        <label for="sort-by-select" class="sort-label">Sort by:</label>
+        <select id="sort-by-select" class="sort-select">
+          <option value="total_points" selected>Total Points</option>
+          <option value="challenges_completed">Challenges Completed</option>
+          <option value="day_streak">Day Streak</option>
+        </select>
+      </div>
 		<table class="leaderboard-table" id="leaderboard-table" aria-describedby="leaderboard-desc">
 			<caption id="leaderboard-desc" style="caption-side: bottom; text-align: left; padding-top: 0.5rem; color: #666;">Top players</caption>
 			<thead>

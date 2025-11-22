@@ -1,7 +1,23 @@
 let leaderboardBody = document.getElementById("leaderboard-body");
 let leaderboardDesc = document.getElementById("leaderboard-desc");
+let sortBySelect = document.getElementById("sort-by-select");
 
-fetchAllStats();
+let allLeaderboardData = [];
+let currentSortField = 'total_points'; // Default sort by total points
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Add event listener for sort dropdown
+  if (sortBySelect) {
+    sortBySelect.addEventListener('change', (e) => {
+      currentSortField = e.target.value;
+      sortAndRender();
+      updateHeaderHighlight();
+    });
+  }
+  
+  // Initial fetch
+  fetchAllStats();
+});
 
 async function fetchAllStats() {
   try {
@@ -9,12 +25,51 @@ async function fetchAllStats() {
     const data = await response.json();
 
     if (response.ok) {
-        populateLeaderboard(data);
+        allLeaderboardData = data;
+        sortAndRender();
+        updateHeaderHighlight();
     } else {
         leaderboardDesc.textContent = data.error;
     }
   } catch (error) {
     console.error('Error loading leaderboard:', error);
+    leaderboardDesc.textContent = 'Error loading leaderboard';
+  }
+}
+
+function sortAndRender() {
+  // Sort the data by the current sort field in descending order (highest first)
+  const sorted = [...allLeaderboardData].sort((a, b) => {
+    const aValue = a[currentSortField];
+    const bValue = b[currentSortField];
+    
+    // Numeric comparison (descending - higher values first)
+    return bValue - aValue;
+  });
+  
+  populateLeaderboard(sorted);
+}
+
+function updateHeaderHighlight() {
+  // Remove highlight from all headers
+  const headers = document.querySelectorAll('.leaderboard-table thead th');
+  headers.forEach(header => {
+    header.classList.remove('sort-active');
+  });
+  
+  // Map sort field to column index
+  const fieldToColumnIndex = {
+    'total_points': 2,      // Total Points column
+    'challenges_completed': 3,  // Challenges Completed column
+    'day_streak': 4          // Day Streak column
+  };
+  
+  const columnIndex = fieldToColumnIndex[currentSortField];
+  if (columnIndex !== undefined) {
+    const headerCells = document.querySelectorAll('.leaderboard-table thead th');
+    if (headerCells[columnIndex]) {
+      headerCells[columnIndex].classList.add('sort-active');
+    }
   }
 }
 
