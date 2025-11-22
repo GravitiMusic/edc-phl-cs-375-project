@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database');
 
-// Retrieve a list of active challenges with id, title, difficulty, created_at
+// Retrieve a list of active challenges with id, title, difficulty, created_at, description
 router.get('/', async (req, res) => {
   try {
     const result = await db.query(
-      "SELECT id, title, difficulty, created_at FROM challenges WHERE is_active = true ORDER BY created_at DESC"
+      "SELECT id, title, difficulty, description, created_at FROM challenges WHERE is_active = true ORDER BY created_at DESC"
     );
 
     return res.json({
