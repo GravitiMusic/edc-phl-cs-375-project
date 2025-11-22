@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Problem 0 - Addition</title>
+  <link rel="stylesheet" href="../../../css/home.css" />
+</head>
+<body>
+  <div class="container">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Index</title>
+  <link rel="stylesheet" href="../../../css/navbar.css" />
+</head>
+<body>
+	<!-- Navigation Bar -->
+	<nav class="navbar">
+		<div class="navbar-container">
+			<a href="../../home.html" class="navbar-brand">OneUp</a>
+			<button class="navbar-toggle" aria-label="Toggle navigation">☰</button>
+			<ul>
+				<li><a href="../../home.html">Home</a></li>
+				<li><a href="../../challenges.html">Challenges</a></li>
+				<li><a href="../../index.html">Index</a></li>
+				<li><a href="../../leaderboard.html">Leaderboard</a></li>
+				<li><a href="../../account-settings.html">Account Settings</a></li>
+			</ul>
+			<div class="navbar-actions">
+				<div class="navbar-profile">
+					<div class="navbar-profile-circle" id="navbarProfileCircle">
+						<span id="navbarProfileInitial">U</span>
+					</div>
+					<div class="navbar-dropdown" id="navbarDropdown">
+						<div class="navbar-dropdown-header">
+							<div class="navbar-dropdown-username" id="navbarDropdownUsername">Loading...</div>
+						</div>
+						<ul class="navbar-dropdown-menu">
+							<li class="navbar-dropdown-item">
+								<a href="../../account-settings.html" class="navbar-dropdown-link">
+									<span class="navbar-dropdown-icon">⚙️</span>
+									<span>Account Settings</span>
+								</a>
+							</li>
+							<li class="navbar-dropdown-divider"></li>
+							<li class="navbar-dropdown-item">
+								<a class="navbar-dropdown-link logout" onclick="logout()">
+									<span class="navbar-dropdown-icon">🚪</span>
+									<span>Logout</span>
+								</a>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	</nav>
+
+
+    <!-- Problem Section -->
+    <section class="daily-challenge-section">
+      <div class="container-wide">
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-header">
+            <div class="challenge-info">
+              <!-- 1. Change challenge title -->
+              <h3 class="challenge-title" id="challengeTitle">Problem 0 - Addition (Demo)</h3>
+              <div class="challenge-meta">
+                  <select id="difficultySelect" class="difficulty-select difficulty-medium">
+                    <option value="1" class="difficulty-option">Easy</option>
+                    <option value="2" class="difficulty-option" selected>Medium</option>
+                    <option value="3"class="difficulty-option" >Hard</option>
+                  </select>
+                <span id="challengePoints" class="challenge-points">+50 points</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="challenge-body">
+            <div class="challenge-description">
+              <h4>Problem Description</h4>
+               <!-- 2. Change challenge description -->
+              <p id="challengeDescription">
+                Given two numbers, compute the sum.
+              </p>
+              <div class="challenge-example">
+                <strong>Example:</strong>
+                <!-- 3. Change example -->
+                <pre>add_numbers(1,1) = 2.</pre>
+              </div>
+            </div>
+
+            <div class="challenge-editor">
+              <div class="editor-header">
+                <span class="editor-title">Code Editor</span>
+                <select id="languageSelect" class="language-select">
+                  <option value="71">Python</option>
+                </select>
+              </div>
+              <div id="codeEditor" class="code-editor-container"></div>
+              <div class="editor-actions">
+                <button id="runCodeBtn" class="btn-run">
+                  <span class="btn-icon">▶</span>
+                  Run Code
+                </button>
+                <button id="submitCodeBtn" class="btn-submit">
+                  <span class="btn-icon">✓</span>
+                  Submit Solution
+                </button>
+              </div>
+              <div class="output-section">
+                <div class="output-header">Output</div>
+                <pre id="codeOutput" class="code-output">Click "Run Code" to see your output here...</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  <!--4. Change which JS file to use  -->
+  <script type="module" src="problem-0-addition.js"></script>
+	<script src="../../../js/csrf.js"></script>
+	<script src="../../../js/navbar.js"></script>
+</body>
+</html>
