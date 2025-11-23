@@ -12,14 +12,14 @@ document.addEventListener('DOMContentLoaded', () => {
     .then((res) => res.json())
     .then((data) => {
       if (!data || !data.success) {
-        tbody.innerHTML = '<tr><td colspan="3">Failed to load challenges.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4">Failed to load challenges.</td></tr>';
         return;
       }
 
       allChallenges = data.challenges || [];
 
       if (allChallenges.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3">No challenges available.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4">No challenges available.</td></tr>';
         return;
       }
 
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch((err) => {
       console.error('Fetch challenges error:', err);
-      tbody.innerHTML = '<tr><td colspan="3">Error loading challenges.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4">Error loading challenges.</td></tr>';
     });
 
   /**
@@ -65,14 +65,15 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   function renderChallenges(challenges) {
     if (challenges.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 2rem;">No challenges match your filters.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">No challenges match your filters.</td></tr>';
       return;
     }
 
     tbody.innerHTML = '';
 
-    challenges.forEach((c) => {
+    challenges.forEach((c, index) => {
       const tr = document.createElement('tr');
+      tr.setAttribute('data-challenge-id', c.id);
 
       const titleTd = document.createElement('td');
       const link = document.createElement('a');
@@ -101,11 +102,45 @@ document.addEventListener('DOMContentLoaded', () => {
       const created = c.created_at ? new Date(c.created_at) : null;
       createdTd.textContent = created ? created.toLocaleString() : '';
 
+      // Description toggle button
+      const descriptionTd = document.createElement('td');
+      const toggleBtn = document.createElement('button');
+      toggleBtn.className = 'toggle-description-btn';
+      toggleBtn.textContent = 'Show';
+      toggleBtn.setAttribute('aria-label', `Toggle description for ${c.title}`);
+
+      // Toggle description visibility
+      toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const descRow = document.getElementById(`desc-row-${c.id}`);
+        if (descRow) {
+          descRow.classList.toggle('active');
+          toggleBtn.classList.toggle('active');
+          toggleBtn.textContent = descRow.classList.contains('active') ? 'Hide' : 'Show';
+        }
+      });
+
+      descriptionTd.appendChild(toggleBtn);
+
       tr.appendChild(titleTd);
       tr.appendChild(difficultyTd);
       tr.appendChild(createdTd);
+      tr.appendChild(descriptionTd);
 
       tbody.appendChild(tr);
+
+      // Create hidden description row
+      const descRow = document.createElement('tr');
+      descRow.id = `desc-row-${c.id}`;
+      descRow.className = 'description-row';
+      const descTd = document.createElement('td');
+      descTd.setAttribute('colspan', '4');
+      const descContent = document.createElement('div');
+      descContent.className = 'description-content';
+      descContent.textContent = c.description || '(no description available)';
+      descTd.appendChild(descContent);
+      descRow.appendChild(descTd);
+      tbody.appendChild(descRow);
     });
   }
 });

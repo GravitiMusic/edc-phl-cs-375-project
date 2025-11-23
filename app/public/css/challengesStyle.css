@@ -160,6 +160,65 @@ section {
   font-size: 0.95rem;
 }
 
+/* Description Column Header */
+#challenges-table th:nth-child(4) {
+  text-align: center;
+}
+
+/* Description Column */
+#challenges-table td:nth-child(4) {
+  text-align: center;
+  padding: 1.25rem 1.5rem;
+}
+
+/* Toggle Button Styling */
+.toggle-description-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.toggle-description-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.toggle-description-btn:active {
+  transform: translateY(0);
+}
+
+.toggle-description-btn.active {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* Description Row */
+.description-row {
+  display: none;
+  background: #f8f9fa;
+}
+
+.description-row.active {
+  display: table-row;
+}
+
+.description-row td {
+  padding: 1.5rem 1.5rem;
+  border-top: 2px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.description-content {
+  line-height: 1.6;
+  color: #333;
+  font-size: 0.95rem;
+}
+
 /* Empty State */
 .empty-state {
   text-align: center;
