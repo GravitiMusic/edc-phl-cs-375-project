@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const tbody = document.getElementById('challenges-body');
   const searchInput = document.getElementById('search-input');
-  const difficultyFilter = document.getElementById('difficulty-filter');
+  const completionFilter = document.getElementById('completion-filter');
 
   if (!tbody) return;
 
@@ -12,14 +12,14 @@ document.addEventListener('DOMContentLoaded', () => {
     .then((res) => res.json())
     .then((data) => {
       if (!data || !data.success) {
-        tbody.innerHTML = '<tr><td colspan="4">Failed to load challenges.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">Failed to load challenges.</td></tr>';
         return;
       }
 
       allChallenges = data.challenges || [];
 
       if (allChallenges.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4">No challenges available.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No challenges available.</td></tr>';
         return;
       }
 
@@ -32,29 +32,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      if (difficultyFilter) {
-        difficultyFilter.addEventListener('change', () => {
+      if (completionFilter) {
+        completionFilter.addEventListener('change', () => {
           applyFilters();
         });
       }
     })
     .catch((err) => {
       console.error('Fetch challenges error:', err);
-      tbody.innerHTML = '<tr><td colspan="4">Error loading challenges.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #ef4444;">Error loading challenges.</td></tr>';
     });
 
   /**
-   * Apply search and difficulty filters
+   * Apply search and completion filters
    */
   function applyFilters() {
     const searchTerm = (searchInput?.value || '').toLowerCase();
-    const selectedDifficulty = difficultyFilter?.value || '';
+    const completionStatus = completionFilter?.value || '';
 
     const filtered = allChallenges.filter((c) => {
-      const matchesSearch = c.title?.toLowerCase().includes(searchTerm) || false;
-      const matchesDifficulty = selectedDifficulty === '' || c.difficulty === selectedDifficulty;
+      const matchesSearch = c.title?.toLowerCase().includes(searchTerm) || 
+                           c.description?.toLowerCase().includes(searchTerm) || false;
+      
+      // Filter by completion status
+      if (completionStatus === 'completed') {
+        return matchesSearch && c.completions.easy && c.completions.medium && c.completions.hard;
+      } else if (completionStatus === 'partial') {
+        const hasAny = c.completions.easy || c.completions.medium || c.completions.hard;
+        const hasAll = c.completions.easy && c.completions.medium && c.completions.hard;
+        return matchesSearch && hasAny && !hasAll;
+      } else if (completionStatus === 'incomplete') {
+        return matchesSearch && !c.completions.easy && !c.completions.medium && !c.completions.hard;
+      }
 
-      return matchesSearch && matchesDifficulty;
+      return matchesSearch;
     });
 
     renderChallenges(filtered);
@@ -65,52 +76,52 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   function renderChallenges(challenges) {
     if (challenges.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">No challenges match your filters.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No challenges match your filters.</td></tr>';
       return;
     }
 
     tbody.innerHTML = '';
 
-    challenges.forEach((c, index) => {
+    challenges.forEach((c) => {
       const tr = document.createElement('tr');
       tr.setAttribute('data-challenge-id', c.id);
+      tr.style.cursor = 'pointer';
 
+      // Make entire row clickable
+      tr.addEventListener('click', () => {
+        window.location.href = `/pages/problem.html?id=${c.id}`;
+      });
+
+      // Title column
       const titleTd = document.createElement('td');
-      const link = document.createElement('a');
-      link.href = '#';
-      link.textContent = c.title || '(no title)';
-      // Future: link to challenge detail page
-      titleTd.appendChild(link);
+      titleTd.className = 'challenge-title-cell';
+      titleTd.textContent = c.title || '(no title)';
 
-      const difficultyTd = document.createElement('td');
-      const difficulty = c.difficulty || '';
-      const difficultyBadge = document.createElement('span');
-      difficultyBadge.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
-      
-      // Add class based on difficulty level
-      if (difficulty === 'easy') {
-        difficultyBadge.className = 'difficulty-easy';
-      } else if (difficulty === 'medium') {
-        difficultyBadge.className = 'difficulty-medium';
-      } else if (difficulty === 'hard') {
-        difficultyBadge.className = 'difficulty-hard';
-      }
-      
-      difficultyTd.appendChild(difficultyBadge);
+      // Easy column
+      const easyTd = document.createElement('td');
+      easyTd.style.textAlign = 'center';
+      easyTd.innerHTML = createCheckmark(c.completions.easy, 'Easy', 'Fix Broken Code');
 
-      const createdTd = document.createElement('td');
-      const created = c.created_at ? new Date(c.created_at) : null;
-      createdTd.textContent = created ? created.toLocaleString() : '';
+      // Medium column
+      const mediumTd = document.createElement('td');
+      mediumTd.style.textAlign = 'center';
+      mediumTd.innerHTML = createCheckmark(c.completions.medium, 'Medium', 'Implement Solution');
 
-      // Description toggle button
+      // Hard column
+      const hardTd = document.createElement('td');
+      hardTd.style.textAlign = 'center';
+      hardTd.innerHTML = createCheckmark(c.completions.hard, 'Hard', 'Optimize Code');
+
+      // Description column with toggle
       const descriptionTd = document.createElement('td');
       const toggleBtn = document.createElement('button');
       toggleBtn.className = 'toggle-description-btn';
       toggleBtn.textContent = 'Show';
       toggleBtn.setAttribute('aria-label', `Toggle description for ${c.title}`);
 
-      // Toggle description visibility
+      // Prevent row click when clicking the button
       toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         e.preventDefault();
         const descRow = document.getElementById(`desc-row-${c.id}`);
         if (descRow) {
@@ -123,8 +134,9 @@ document.addEventListener('DOMContentLoaded', () => {
       descriptionTd.appendChild(toggleBtn);
 
       tr.appendChild(titleTd);
-      tr.appendChild(difficultyTd);
-      tr.appendChild(createdTd);
+      tr.appendChild(easyTd);
+      tr.appendChild(mediumTd);
+      tr.appendChild(hardTd);
       tr.appendChild(descriptionTd);
 
       tbody.appendChild(tr);
@@ -134,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
       descRow.id = `desc-row-${c.id}`;
       descRow.className = 'description-row';
       const descTd = document.createElement('td');
-      descTd.setAttribute('colspan', '4');
+      descTd.setAttribute('colspan', '5');
       const descContent = document.createElement('div');
       descContent.className = 'description-content';
       descContent.textContent = c.description || '(no description available)';
@@ -142,5 +154,16 @@ document.addEventListener('DOMContentLoaded', () => {
       descRow.appendChild(descTd);
       tbody.appendChild(descRow);
     });
+  }
+
+  /**
+   * Create checkmark HTML for completion status
+   */
+  function createCheckmark(completed, difficulty, description) {
+    if (completed) {
+      return `<span class="completion-checkmark completed" title="${difficulty}: ${description} - Completed">✓</span>`;
+    } else {
+      return `<span class="completion-checkmark incomplete" title="${difficulty}: ${description} - Not Started">○</span>`;
+    }
   }
 });

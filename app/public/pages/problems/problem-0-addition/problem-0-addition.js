@@ -206,31 +206,107 @@ async function runCode() {
 
 /**
  * Submit the solution
- * //TODO: Hit server run endpoint, update statistics
  */
 async function submitSolution() {
   const code = editor.state.doc.toString();
   const submitBtn = document.getElementById('submitCodeBtn');
+  const outputEl = document.getElementById('codeOutput');
   
   if (!code.trim()) {
     alert('Please write some code before submitting!');
     return;
   }
 
+  // Get current difficulty
+  const difficultySelect = document.getElementById('difficultySelect');
+  const difficultyValue = parseInt(difficultySelect.value);
+  const difficultyMap = { 1: 'easy', 2: 'medium', 3: 'hard' };
+  const difficulty = difficultyMap[difficultyValue];
+
   // Disable button
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<span class="btn-icon">⏳</span>Submitting...';
+  outputEl.textContent = "⏳ Submitting your solution...";
 
   try {
-    // For now, just show a success message
-    // In the future, this would submit to your backend
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    alert('🎉 Solution submitted successfully!\n\nThis is a placeholder. In the full version, your solution would be tested against multiple test cases.');
-    
-    console.log('✅ Solution submitted');
+    const response = await window.csrfProtection.protectedFetch("/submissions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        challenge_id: 1, // TODO: Get this from page context
+        source_code: testSuite(code),
+        language_id: currentLanguageId,
+        difficulty: difficulty
+      }),
+    });
+
+    // Check if user is authenticated
+    if (response.status === 401) {
+      outputEl.textContent = "🔒 You must be logged in to submit. Redirecting...";
+      setTimeout(() => {
+        window.location.href = "/pages/login.html";
+      }, 2000);
+      return;
+    }
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      const sub = data.submission;
+      const stats = data.user_stats;
+      
+      // Build result message
+      let message = '';
+      
+      if (sub.status === 'passed') {
+        message = '🎉 Submission Successful!\n\n';
+        message += `✅ All tests passed: ${sub.tests_passed}/${sub.tests_total}\n`;
+        
+        if (sub.is_first_completion) {
+          message += `\n🌟 First completion! +${sub.points_earned} points\n`;
+        } else {
+          message += `\n✓ Already completed (no points awarded)\n`;
+        }
+        
+        if (sub.execution_time_ms) {
+          message += `⏱️  Execution time: ${sub.execution_time_ms}ms\n`;
+        }
+        if (sub.memory_used_kb) {
+          message += `💾 Memory used: ${sub.memory_used_kb}KB\n`;
+        }
+        
+        message += `\n📊 Your Stats:\n`;
+        message += `   Total Points: ${stats.total_points}\n`;
+        message += `   Challenges Completed: ${stats.challenges_completed}\n`;
+        message += `   Day Streak: ${stats.day_streak}`;
+        
+        outputEl.textContent = message;
+        outputEl.style.color = '#28a745';
+      } else {
+        message = '❌ Submission Failed\n\n';
+        message += `Tests passed: ${sub.tests_passed}/${sub.tests_total}\n\n`;
+        
+        if (data.output.stderr) {
+          message += 'Error:\n' + data.output.stderr;
+        } else if (data.output.compile_output) {
+          message += 'Compilation Error:\n' + data.output.compile_output;
+        } else {
+          message += 'Some tests failed. Try debugging your code.';
+        }
+        
+        outputEl.textContent = message;
+        outputEl.style.color = '#dc3545';
+      }
+      
+      console.log('✅ Solution submitted:', data);
+    } else {
+      throw new Error(data.error || 'Submission failed');
+    }
   } catch (err) {
-    alert('Failed to submit solution. Please try again.');
+    outputEl.textContent = "❌ Submission failed:\n\n" + err.message;
+    outputEl.style.color = '#dc3545';
     console.error('Error submitting solution:', err);
   } finally {
     // Re-enable button
@@ -272,9 +348,29 @@ function setupEventListeners() {
 }
 
 
-// Make logout function globally available
-window.logout = logout;
+/**
+ * Check if user is logged in when page loads
+ */
+async function checkAuth() {
+  try {
+    const response = await fetch('/auth/me');
+    const data = await response.json();
 
-initializeEditor(2);
-setupEventListeners();
+    if (data.authenticated) {
+      // User is logged in - initialize the page
+      initializeEditor(2);
+      setupEventListeners();
+    } else {
+      // Not logged in - redirect to login page
+      console.log('Not authenticated, redirecting to login...');
+      window.location.href = '/pages/login.html';
+    }
+  } catch (error) {
+    console.error('Error checking authentication:', error);
+    window.location.href = '/pages/login.html';
+  }
+}
+
+// Check authentication before initializing page
+checkAuth();
 

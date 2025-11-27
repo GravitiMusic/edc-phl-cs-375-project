@@ -237,8 +237,24 @@ async function changePassword() {
     return;
   }
   
-  if (newPassword.length < 6) {
-    showPasswordMessage('New password must be at least 6 characters', 'error');
+  // Validate password strength (must match backend requirements)
+  if (newPassword.length < 8) {
+    showPasswordMessage('Password must be at least 8 characters long', 'error');
+    return;
+  }
+  
+  if (!/[A-Z]/.test(newPassword)) {
+    showPasswordMessage('Password must contain at least one uppercase letter', 'error');
+    return;
+  }
+  
+  if (!/[a-z]/.test(newPassword)) {
+    showPasswordMessage('Password must contain at least one lowercase letter', 'error');
+    return;
+  }
+  
+  if (!/[0-9]/.test(newPassword)) {
+    showPasswordMessage('Password must contain at least one number', 'error');
     return;
   }
   

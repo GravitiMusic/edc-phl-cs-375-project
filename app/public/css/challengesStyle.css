@@ -71,6 +71,7 @@ section {
   width: 100%;
   border-collapse: collapse;
   font-size: 1rem;
+  margin-top: 1rem;
 }
 
 #challenges-table thead {
@@ -105,70 +106,54 @@ section {
   border-bottom: none;
 }
 
-/* Title Column - with Link Styling */
-#challenges-table td a {
-  color: #667eea;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s;
-}
-
-#challenges-table td a:hover {
-  color: #764ba2;
-  text-decoration: underline;
-}
-
-/* Difficulty Badge Styling */
-#challenges-table td:nth-child(2) {
+/* Title Column */
+.challenge-title-cell {
   font-weight: 600;
+  color: #2c3e50;
+  font-size: 1.05rem;
 }
 
-#challenges-table tbody tr:hover td:nth-child(2) {
+#challenges-table tbody tr:hover .challenge-title-cell {
   color: #667eea;
 }
 
-.difficulty-easy {
-  color: #28a745;
-  background: #f0f9f4;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
+/* Completion Checkmarks */
+.completion-checkmark {
   display: inline-block;
-  font-size: 0.95rem;
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  font-weight: bold;
+  transition: all 0.2s;
 }
 
-.difficulty-medium {
-  color: #ffc107;
-  background: #fffbf0;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  display: inline-block;
-  font-size: 0.95rem;
+.completion-checkmark.completed {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
-.difficulty-hard {
-  color: #dc3545;
-  background: #ffe5e5;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  display: inline-block;
-  font-size: 0.95rem;
+.completion-checkmark.incomplete {
+  background: #e2e8f0;
+  color: #94a3b8;
+  border: 2px solid #cbd5e1;
 }
 
-/* Created At Column */
-#challenges-table td:nth-child(3) {
-  color: #6c757d;
-  font-size: 0.95rem;
+#challenges-table tbody tr:hover .completion-checkmark.completed {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
-/* Description Column Header */
-#challenges-table th:nth-child(4) {
-  text-align: center;
+#challenges-table tbody tr:hover .completion-checkmark.incomplete {
+  background: #cbd5e1;
+  color: #64748b;
 }
 
 /* Description Column */
-#challenges-table td:nth-child(4) {
+#challenges-table td:last-child {
   text-align: center;
-  padding: 1.25rem 1.5rem;
 }
 
 /* Toggle Button Styling */
@@ -239,4 +224,28 @@ section {
 
 .error-state td {
   padding: 2rem 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  #challenges-table {
+    font-size: 0.9rem;
+  }
+
+  #challenges-table th,
+  #challenges-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .completion-checkmark {
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    font-size: 1rem;
+  }
+
+  .toggle-description-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+  }
 }

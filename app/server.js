@@ -14,10 +14,7 @@ const app = express();
 const port = 3000;
 const hostname = "localhost";
 
-//removed for codemirror
-//app.use(express.static("public"));
-
-//testing for Codemirror:
+// Static files
 app.use(express.static(path.join(__dirname, "public")));
 
 //Middleware
@@ -68,7 +65,7 @@ app.use(session({
   cookie: {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     httpOnly: true,
-    secure: false, // Set to true only if using HTTPS
+    secure: isProduction, // Use secure cookies in production (HTTPS only)
     sameSite: 'strict'
   },
   proxy: isProduction // Trust first proxy in production (nginx, etc.)
@@ -78,9 +75,10 @@ app.use(session({
 const { attachUser, requireAuth } = require('./middleware/auth');
 app.use(attachUser);
 
-// Route to get CSRF token (returning dummy token for compatibility)
+// Route to get CSRF token (returns dummy token for frontend compatibility)
+// Note: CSRF protection is provided by SameSite=strict cookies
 app.get('/csrf-token', (req, res) => {
-  res.json({ csrfToken: 'dummy-token-for-school-project' });
+  res.json({ csrfToken: 'not-needed-samesite-cookie-protection' });
 });
 
 // Routes
@@ -90,8 +88,14 @@ app.use('/auth', authRoutes);
 // Challenges API
 const challengesRoutes = require('./routes/challenges');
 app.use('/challenges', challengesRoutes);
+
+// Stats API
 const statsRoutes = require('./routes/stats');
 app.use('/stats', statsRoutes);
+
+// Submissions API
+const submissionsRoutes = require('./routes/submissions');
+app.use('/submissions', submissionsRoutes);
 
 // Root redirect - send to home if authenticated, login otherwise
 app.get('/', (req, res) => {
@@ -115,6 +119,19 @@ app.get('/pages/account-settings.html', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'pages', 'account-settings.html'));
 });
 
+app.get('/pages/statistics.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'pages', 'statistics.html'));
+});
+
+app.get('/pages/history.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'pages', 'history.html'));
+});
+
+app.get('/pages/problem.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'pages', 'problem.html'));
+});
+
+// Legacy route for old problem pages (if any)
 app.get('/pages/problems/:name', requireAuth, (req, res) => {
   const filePath = path.join(__dirname, 'public', 'pages', 'problems', req.params.name, req.params.name + '.html');
   res.sendFile(filePath);
@@ -125,8 +142,11 @@ app.post("/run", requireAuth, codeExecutionLimiter, async (req, res) => {
   const { source_code, language_id } = req.body;
 
   try {
+    // Base64 encode the source code
+    const encodedSourceCode = Buffer.from(source_code).toString('base64');
+    
     const response = await fetch(
-      `${process.env.JUDGE_API_URL}/submissions?base64_encoded=false&wait=true`,
+      `${process.env.JUDGE_API_URL}/submissions?base64_encoded=true&wait=true`,
       {
         method: "POST",
         headers: {
@@ -134,11 +154,20 @@ app.post("/run", requireAuth, codeExecutionLimiter, async (req, res) => {
           "X-RapidAPI-Key": process.env.JUDGE_API_KEY,
           "X-RapidAPI-Host": process.env.JUDGE_API_HOST,
         },
-        body: JSON.stringify({ source_code, language_id }),
+        body: JSON.stringify({ 
+          source_code: encodedSourceCode, 
+          language_id 
+        }),
       }
     );
 
     const result = await response.json();
+    
+    // Decode base64 responses
+    if (result.stdout) result.stdout = Buffer.from(result.stdout, 'base64').toString('utf-8');
+    if (result.stderr) result.stderr = Buffer.from(result.stderr, 'base64').toString('utf-8');
+    if (result.compile_output) result.compile_output = Buffer.from(result.compile_output, 'base64').toString('utf-8');
+    
     res.json(result);
   } catch (err) {
     console.error("Judge0 error:", err);
@@ -146,44 +175,16 @@ app.post("/run", requireAuth, codeExecutionLimiter, async (req, res) => {
   }
 });
 
-function buildEasySubtractHarness(userCode) {
-  return `
-${userCode}
-
-tests_passed = 0
-total_tests = 3
-
-def assert_equal(actual, expected, name):
-    global tests_passed
-    if actual == expected:
-        tests_passed += 1
-
-# Test cases
-assert_equal(subtract_numbers(10, 5), 5, "basic_1")
-assert_equal(subtract_numbers(7, 2), 5, "basic_2")
-assert_equal(subtract_numbers(3, 10), -7, "basic_3")
-
-print(f"{tests_passed}/{total_tests} tests passed")
-`;
-}
-
-// Example of testing code
-
-
-app.post("/challenge/run", async (req, res) => {
+// Challenge execution endpoint - runs user code against test cases
+app.post("/challenge/run", requireAuth, codeExecutionLimiter, async (req, res) => {
   const { source_code, challengeId } = req.body;
 
   try {
-    // let wrappedCode;
-
-    // if (challengeId === "easy_subtract") {
-    //   wrappedCode = buildEasySubtractHarness(source_code);
-    // } else {
-    //   return res.status(400).json({ error: "Unknown challengeId" });
-    // }
-
-    const response = await fetch(
-      `${process.env.JUDGE_API_URL}/submissions?base64_encoded=false&wait=true`,
+      // Base64 encode the source code
+      const encodedSourceCode = Buffer.from(source_code).toString('base64');
+      
+      const response = await fetch(
+      `${process.env.JUDGE_API_URL}/submissions?base64_encoded=true&wait=true`,
       {
         method: "POST",
         headers: {
@@ -192,13 +193,18 @@ app.post("/challenge/run", async (req, res) => {
           "X-RapidAPI-Host": process.env.JUDGE_API_HOST,
         },
         body: JSON.stringify({
-          source_code: source_code,
+          source_code: encodedSourceCode,
           language_id: 71, // Python
         }),
       }
     );
 
     const result = await response.json();
+    
+    // Decode base64 responses
+    if (result.stdout) result.stdout = Buffer.from(result.stdout, 'base64').toString('utf-8');
+    if (result.stderr) result.stderr = Buffer.from(result.stderr, 'base64').toString('utf-8');
+    if (result.compile_output) result.compile_output = Buffer.from(result.compile_output, 'base64').toString('utf-8');
 
     const stdout = (result.stdout || "").trim();
     const lines = stdout.split("\n");

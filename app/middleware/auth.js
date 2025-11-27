@@ -37,22 +37,17 @@ function requireAuth(req, res, next) {
  * Makes user info available in req.user on every request
  * 
  * Use this in server.js: app.use(attachUser);
+ * 
+ * Note: This uses session data (no DB query) for performance.
+ * Username is stored in session during login (auth.js line 120).
  */
-async function attachUser(req, res, next) {
-  if (req.session && req.session.userId) {
-    try {
-      const db = require('../database');
-      const result = await db.query(
-        'SELECT id, username FROM users WHERE id = $1',
-        [req.session.userId]
-      );
-      
-      if (result.rows.length > 0) {
-        req.user = result.rows[0];
-      }
-    } catch (error) {
-      console.error('Error fetching user:', error);
-    }
+function attachUser(req, res, next) {
+  if (req.session && req.session.userId && req.session.username) {
+    // Use session data - no database query needed!
+    req.user = {
+      id: req.session.userId,
+      username: req.session.username
+    };
   }
   next();
 }
