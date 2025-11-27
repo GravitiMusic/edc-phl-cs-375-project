@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Statistics - One Up</title>
+  <link rel="stylesheet" href="../css/navbar.css">
+  <link rel="stylesheet" href="../css/statistics.css">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="../pages/home.html" class="navbar-brand">OneUp</a>
+      <button class="navbar-toggle" aria-label="Toggle navigation">☰</button>
+      <ul>
+        <li><a href="../pages/home.html">Home</a></li>
+        <li><a href="../pages/challenges.html">Challenges</a></li>
+        <li><a href="../pages/statistics.html" class="active">Statistics</a></li>
+        <li><a href="../pages/history.html">History</a></li>
+        <li><a href="../pages/leaderboard.html">Leaderboard</a></li>
+        <li><a href="../pages/account-settings.html">Account Settings</a></li>
+      </ul>
+      <div class="navbar-actions">
+        <div class="navbar-profile">
+          <div class="navbar-profile-circle" id="navbarProfileCircle">
+            <span id="navbarProfileInitial">U</span>
+          </div>
+          <div class="navbar-dropdown" id="navbarDropdown">
+            <div class="navbar-dropdown-header">
+              <div class="navbar-dropdown-username" id="navbarDropdownUsername">Loading...</div>
+            </div>
+            <ul class="navbar-dropdown-menu">
+              <li class="navbar-dropdown-item">
+                <a href="../pages/account-settings.html" class="navbar-dropdown-link">
+                  <span class="navbar-dropdown-icon">⚙️</span>
+                  <span>Account Settings</span>
+                </a>
+              </li>
+              <li class="navbar-dropdown-divider"></li>
+              <li class="navbar-dropdown-item">
+                <a class="navbar-dropdown-link logout" onclick="logout()">
+                  <span class="navbar-dropdown-icon">🚪</span>
+                  <span>Logout</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container">
+    <!-- Loading State -->
+    <div id="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading your statistics...</p>
+    </div>
+
+    <!-- Statistics Content -->
+    <div id="content" style="display: none;">
+      <!-- Header -->
+      <header class="stats-header">
+        <h1>My Statistics</h1>
+        <p class="stats-subtitle">Track your progress and achievements</p>
+      </header>
+
+      <!-- Overview Cards -->
+      <section class="stats-overview">
+        <div class="stat-card rank-card">
+          <div class="stat-icon">🏆</div>
+          <div class="stat-content">
+            <div class="stat-label">Global Rank</div>
+            <div class="stat-value" id="userRank">-</div>
+          </div>
+        </div>
+
+        <div class="stat-card points-card">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-content">
+            <div class="stat-label">Total Points</div>
+            <div class="stat-value" id="totalPoints">0</div>
+          </div>
+        </div>
+
+        <div class="stat-card challenges-card">
+          <div class="stat-icon">✓</div>
+          <div class="stat-content">
+            <div class="stat-label">Challenges Completed</div>
+            <div class="stat-value" id="challengesCompleted">0</div>
+          </div>
+        </div>
+
+        <div class="stat-card streak-card">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-content">
+            <div class="stat-label">Day Streak</div>
+            <div class="stat-value" id="dayStreak">0</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Difficulty Breakdown -->
+      <section class="difficulty-breakdown">
+        <h2>Challenges by Difficulty</h2>
+        <div class="difficulty-cards">
+          <div class="difficulty-card easy-card">
+            <div class="difficulty-icon">🟢</div>
+            <div class="difficulty-content">
+              <div class="difficulty-label">Easy</div>
+              <div class="difficulty-subtitle">Fix Broken Code</div>
+              <div class="difficulty-value" id="easyCompleted">0</div>
+            </div>
+          </div>
+          
+          <div class="difficulty-card medium-card">
+            <div class="difficulty-icon">🟡</div>
+            <div class="difficulty-content">
+              <div class="difficulty-label">Medium</div>
+              <div class="difficulty-subtitle">Implement Solution</div>
+              <div class="difficulty-value" id="mediumCompleted">0</div>
+            </div>
+          </div>
+          
+          <div class="difficulty-card hard-card">
+            <div class="difficulty-icon">🔴</div>
+            <div class="difficulty-content">
+              <div class="difficulty-label">Hard</div>
+              <div class="difficulty-subtitle">Optimize Code</div>
+              <div class="difficulty-value" id="hardCompleted">0</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Detailed Stats Grid -->
+      <section class="stats-grid">
+        <!-- Submission Statistics -->
+        <div class="stats-section">
+          <h2>Submission Statistics</h2>
+          <div class="stats-list">
+            <div class="stats-item">
+              <span class="stats-item-label">Total Submissions</span>
+              <span class="stats-item-value" id="totalSubmissions">0</span>
+            </div>
+            <div class="stats-item">
+              <span class="stats-item-label">Successful Submissions</span>
+              <span class="stats-item-value" id="successfulSubmissions">0</span>
+            </div>
+            <div class="stats-item">
+              <span class="stats-item-label">Success Rate</span>
+              <span class="stats-item-value" id="successRate">0%</span>
+            </div>
+            <div class="stats-item">
+              <span class="stats-item-label">Average Execution Time</span>
+              <span class="stats-item-value" id="avgExecutionTime">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Info -->
+        <div class="stats-section">
+          <h2>Account Information</h2>
+          <div class="stats-list">
+            <div class="stats-item">
+              <span class="stats-item-label">Username</span>
+              <span class="stats-item-value" id="username">-</span>
+            </div>
+            <div class="stats-item">
+              <span class="stats-item-label">Member Since</span>
+              <span class="stats-item-value" id="memberSince">-</span>
+            </div>
+            <div class="stats-item">
+              <span class="stats-item-label">Last Login</span>
+              <span class="stats-item-value" id="lastLogin">-</span>
+            </div>
+            <div class="stats-item">
+              <span class="stats-item-label">First Submission</span>
+              <span class="stats-item-value" id="firstSubmission">-</span>
+            </div>
+            <div class="stats-item">
+              <span class="stats-item-label">Latest Submission</span>
+              <span class="stats-item-value" id="lastSubmission">-</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Progress Section -->
+      <section class="progress-section">
+        <h2>Your Progress</h2>
+        <div class="progress-bar-container">
+          <div class="progress-bar-label">
+            <span>Next Milestone</span>
+            <span id="progressText">0 / 100 points</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Action Buttons -->
+      <section class="stats-actions">
+        <a href="../pages/challenges.html" class="btn btn-primary">
+          <span class="btn-icon">🎯</span>
+          Solve More Challenges
+        </a>
+        <a href="../pages/leaderboard.html" class="btn btn-secondary">
+          <span class="btn-icon">🏆</span>
+          View Leaderboard
+        </a>
+      </section>
+    </div>
+  </div>
+
+  <script src="../js/csrf.js"></script>
+  <script src="../js/navbar.js"></script>
+  <script src="../js/statistics.js"></script>
+</body>
+</html>
+

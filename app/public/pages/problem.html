@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Challenge - OneUp</title>
+  <link rel="stylesheet" href="../css/home.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <a href="home.html" class="navbar-brand">OneUp</a>
+        <button class="navbar-toggle" aria-label="Toggle navigation">☰</button>
+        <ul>
+          <li><a href="home.html">Home</a></li>
+          <li><a href="challenges.html">Challenges</a></li>
+          <li><a href="statistics.html">Statistics</a></li>
+          <li><a href="history.html">History</a></li>
+          <li><a href="leaderboard.html">Leaderboard</a></li>
+          <li><a href="account-settings.html">Account Settings</a></li>
+        </ul>
+        <div class="navbar-actions">
+          <div class="navbar-profile">
+            <div class="navbar-profile-circle" id="navbarProfileCircle">
+              <span id="navbarProfileInitial">U</span>
+            </div>
+            <div class="navbar-dropdown" id="navbarDropdown">
+              <div class="navbar-dropdown-header">
+                <div class="navbar-dropdown-username" id="navbarDropdownUsername">Loading...</div>
+              </div>
+              <ul class="navbar-dropdown-menu">
+                <li class="navbar-dropdown-item">
+                  <a href="account-settings.html" class="navbar-dropdown-link">
+                    <span class="navbar-dropdown-icon">⚙️</span>
+                    <span>Account Settings</span>
+                  </a>
+                </li>
+                <li class="navbar-dropdown-divider"></li>
+                <li class="navbar-dropdown-item">
+                  <a class="navbar-dropdown-link logout" onclick="logout()">
+                    <span class="navbar-dropdown-icon">🚪</span>
+                    <span>Logout</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Loading State -->
+    <div id="loading-state" style="text-align: center; padding: 3rem;">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
+      <p>Loading challenge...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-state" style="display: none; text-align: center; padding: 3rem;">
+      <div style="font-size: 3rem; margin-bottom: 1rem; color: #ef4444;">❌</div>
+      <h2 style="color: #ef4444;">Challenge Not Found</h2>
+      <p style="margin: 1rem 0;">The challenge you're looking for doesn't exist or has been removed.</p>
+      <a href="challenges.html" class="btn btn-primary" style="display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px;">Back to Challenges</a>
+    </div>
+
+    <!-- Problem Section -->
+    <section id="challenge-content" class="daily-challenge-section" style="display: none;">
+      <div class="container-wide">
+        <div class="challenge-card">
+          <div class="challenge-header">
+            <div class="challenge-info">
+              <h3 class="challenge-title" id="challengeTitle">Loading...</h3>
+              <div class="challenge-meta">
+                <select id="difficultySelect" class="difficulty-select difficulty-medium">
+                  <option value="easy">Easy - Fix Broken Code</option>
+                  <option value="medium" selected>Medium - Implement Solution</option>
+                  <option value="hard">Hard - Optimize Code</option>
+                </select>
+                <span id="challengePoints" class="challenge-points">+50 points</span>
+                <span id="completionStatus" class="completion-badge" style="display: none; margin-left: 1rem; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.9rem; background: #10b981; color: white;">✓ Completed</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="challenge-body">
+            <div class="challenge-description">
+              <h4>Problem Description</h4>
+              <p id="challengeDescription">Loading description...</p>
+              
+              <h4 style="margin-top: 1.5rem;">Instructions</h4>
+              <p id="challengeInstructions">Loading instructions...</p>
+              
+              <div id="challengeHintSection" style="margin-top: 1.5rem; padding: 1rem; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px; display: none;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #f59e0b;">💡 Hint</h4>
+                <p id="challengeHint" style="margin: 0; color: #92400e;"></p>
+              </div>
+            </div>
+
+            <div class="challenge-editor">
+              <div class="editor-header">
+                <span class="editor-label">Code Editor</span>
+                <select id="languageSelect" class="language-select">
+                  <option value="71">Python</option>
+                </select>
+              </div>
+              <div id="codeEditor" class="code-editor-container"></div>
+              <div class="editor-actions">
+                <button id="resetCodeBtn" class="btn btn-tertiary" title="Reset to starter code">
+                  <span class="btn-icon">↻</span><span>Reset Code</span>
+                </button>
+                <button id="runCodeBtn" class="btn btn-secondary">
+                  <span class="btn-icon">▶</span><span>Run Code</span>
+                </button>
+                <button id="submitCodeBtn" class="btn btn-primary">
+                  <span class="btn-icon">✓</span><span>Submit Solution</span>
+                </button>
+              </div>
+              <div class="output-section">
+                <div class="output-header">Output</div>
+                <pre id="codeOutput" class="code-output">Run your code to see output here...</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="../js/csrf.js"></script>
+  <script src="../js/navbar.js"></script>
+  <script type="module" src="../js/problem.js"></script>
+</body>
+</html>
+

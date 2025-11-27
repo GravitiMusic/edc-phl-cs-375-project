@@ -2,9 +2,10 @@
   "scripts": {
     "start": "node app/server.js",
     "dev": "node app/server.js",
-    "setup": "psql --username postgres -f setup.sql",
+    "setup": "psql --username postgres -d oneup -f setup.sql",
     "seed": "node seed.js",
-    "reset": "psql --username postgres -f setup.sql && node seed.js"
+    "seed:submissions": "node seedSubmissions.js",
+    "reset": "psql --username postgres -d oneup -f setup.sql && node seed.js"
   },
   "dependencies": {
     "argon2": "^0.30.3",

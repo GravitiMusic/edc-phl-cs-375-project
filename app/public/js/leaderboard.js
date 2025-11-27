@@ -81,7 +81,8 @@ async function populateLeaderboard(userData) {
 
         let rankTd = document.createElement("td");
         rankTd.classList.add("rank");
-        rankTd.textContent = stats.rank;
+        // Display position in current sorted list (1-indexed)
+        rankTd.textContent = i + 1;
         tr.appendChild(rankTd);
 
         let usernameTd = document.createElement("td");

@@ -26,13 +26,6 @@ const ADMIN_CREDENTIALS = {
   password: 'admin',  // Simple password for development
 };
 
-async function populateFakeUsers() {
-  await pool.query(
-    'INSERT INTO users (username, password, rank, total_points, challenges_completed, day_streak) VALUES ($1, $2, $3, $4, $5, $6)',
-    ["John", "12345", 2, 1500, 30, 5]
-  );
-}
-
 async function seedDatabase() {
   console.log('🌱 Starting database seed...\n');
 
@@ -75,6 +68,35 @@ async function seedDatabase() {
     console.log(`   Name:     ${ADMIN_CREDENTIALS.name}`);
     console.log(`   Phone:    ${ADMIN_CREDENTIALS.phone}`);
     console.log('   ================================');
+
+    // Create test user for leaderboard (if doesn't exist)
+    console.log('\n Checking for test user...');
+    const checkTestUser = await pool.query(
+      'SELECT id, username FROM users WHERE username = $1',
+      ['John']
+    );
+
+    if (checkTestUser.rows.length > 0) {
+      console.log('✅ Test user "John" already exists');
+      console.log(`   ID: ${checkTestUser.rows[0].id}`);
+    } else {
+      // Hash test user password
+      console.log('🔐 Hashing test user password...');
+      const testUserPassword = await argon2.hash('TestPassword123'); // Secure password for test user
+
+      // Create test user with realistic leaderboard stats
+      console.log(' Creating test user for leaderboard...');
+      const testUserResult = await pool.query(
+        'INSERT INTO users (username, password, rank, total_points, challenges_completed, day_streak, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING id, username',
+        ['John', testUserPassword, 2, 1500, 30, 5]
+      );
+
+      console.log('   Test user created successfully!');
+      console.log(`   ID: ${testUserResult.rows[0].id}`);
+      console.log(`   Username: ${testUserResult.rows[0].username}`);
+      console.log('   Note: Login with username "John" and password "TestPassword123"');
+    }
+
     console.log('\n✨ Seed completed successfully!\n');
 
   } catch (error) {
@@ -87,7 +109,4 @@ async function seedDatabase() {
 
 // Run the seed function
 seedDatabase();
-
-// Populate fake users to test leaderboard
-populateFakeUsers();
 

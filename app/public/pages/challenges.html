@@ -20,11 +20,12 @@
         <a href="home.html" class="navbar-brand">OneUp</a>
         <button class="navbar-toggle" aria-label="Toggle navigation">☰</button>
         <ul>
-          <li><a href="home.html">Home</a></li>
-          <li><a href="challenges.html" class="active">Challenges</a></li>
-          <li><a href="index.html">Index</a></li>
-          <li><a href="leaderboard.html">Leaderboard</a></li>
-          <li><a href="account-settings.html">Account Settings</a></li>
+        <li><a href="home.html">Home</a></li>
+        <li><a href="challenges.html" class="active">Challenges</a></li>
+        <li><a href="statistics.html">Statistics</a></li>
+        <li><a href="history.html">History</a></li>
+        <li><a href="leaderboard.html">Leaderboard</a></li>
+        <li><a href="account-settings.html">Account Settings</a></li>
         </ul>
         <div class="navbar-actions">
           <div class="navbar-profile">
@@ -67,11 +68,11 @@
           />
         </div>
         <div class="filter-group">
-          <select id="difficulty-filter" class="difficulty-select">
-            <option value="">All Difficulties</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
+          <select id="completion-filter" class="difficulty-select">
+            <option value="">All Challenges</option>
+            <option value="completed">Fully Completed</option>
+            <option value="partial">Partially Completed</option>
+            <option value="incomplete">Not Started</option>
           </select>
         </div>
       </div>
@@ -82,8 +83,9 @@
         <thead>
           <tr>
             <th>Title</th>
-            <th>Difficulty</th>
-            <th>Created At</th>
+            <th style="text-align: center;">Easy</th>
+            <th style="text-align: center;">Medium</th>
+            <th style="text-align: center;">Hard</th>
             <th>Description</th>
           </tr>
         </thead>

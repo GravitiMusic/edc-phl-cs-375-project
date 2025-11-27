@@ -168,7 +168,6 @@ router.post("/logout", (req, res) => {
       if (err) {
         console.error("Logout error:", err);
         return res.status(500).json({ 
-          success: false, 
           error: "Logout failed" 
         });
       }

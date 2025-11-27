@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submission History - OneUp</title>
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/history.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="home.html" class="navbar-brand">OneUp</a>
+            <button class="navbar-toggle" aria-label="Toggle navigation">☰</button>
+            <ul>
+                <li><a href="home.html">Home</a></li>
+                <li><a href="challenges.html">Challenges</a></li>
+                <li><a href="statistics.html">Statistics</a></li>
+                <li><a href="history.html" class="active">History</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="account-settings.html">Account Settings</a></li>
+            </ul>
+            <div class="navbar-actions">
+                <div class="navbar-profile">
+                    <div class="navbar-profile-circle" id="navbarProfileCircle">
+                        <span id="navbarProfileInitial">U</span>
+                    </div>
+                    <div class="navbar-dropdown" id="navbarDropdown">
+                        <div class="navbar-dropdown-header">
+                            <div class="navbar-dropdown-username" id="navbarDropdownUsername">Loading...</div>
+                        </div>
+                        <ul class="navbar-dropdown-menu">
+                            <li class="navbar-dropdown-item">
+                                <a href="account-settings.html" class="navbar-dropdown-link">
+                                    <span class="navbar-dropdown-icon">⚙️</span>
+                                    <span>Account Settings</span>
+                                </a>
+                            </li>
+                            <li class="navbar-dropdown-divider"></li>
+                            <li class="navbar-dropdown-item">
+                                <a class="navbar-dropdown-link logout" onclick="logout()">
+                                    <span class="navbar-dropdown-icon">🚪</span>
+                                    <span>Logout</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="history-container">
+            <div class="history-header">
+                <h1>Submission History</h1>
+                <p class="history-subtitle">View all your coding challenge attempts</p>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="history-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-submissions">-</div>
+                    <div class="stat-label">Total Submissions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="successful-submissions">-</div>
+                    <div class="stat-label">Successful</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="success-rate">-%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="unique-solved">-</div>
+                    <div class="stat-label">Unique Solved</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="history-filters">
+                <div class="filter-group">
+                    <label for="filter-challenge">Challenge:</label>
+                    <select id="filter-challenge">
+                        <option value="all">All Challenges</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-difficulty">Difficulty:</label>
+                    <select id="filter-difficulty">
+                        <option value="all">All Difficulties</option>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-status">Status:</label>
+                    <select id="filter-status">
+                        <option value="all">All Status</option>
+                        <option value="passed">Passed</option>
+                        <option value="failed">Failed</option>
+                        <option value="error">Error</option>
+                        <option value="timeout">Timeout</option>
+                    </select>
+                </div>
+                <button id="reset-filters" class="btn-reset">Reset Filters</button>
+            </div>
+
+            <!-- Submissions Table -->
+            <div class="submissions-wrapper">
+                <div id="loading-spinner" class="loading">Loading submissions...</div>
+                <div id="no-submissions" class="no-data" style="display: none;">
+                    <p>No submissions found.</p>
+                    <a href="/pages/challenges.html" class="btn-primary">Start a Challenge</a>
+                </div>
+                <table id="submissions-table" class="submissions-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Challenge</th>
+                            <th>Difficulty</th>
+                            <th>Status</th>
+                            <th>Tests Passed</th>
+                            <th>Points</th>
+                            <th>Time</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="submissions-body">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Submission Detail Modal -->
+    <div id="submission-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Submission Details</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-section">
+                    <h3>Challenge Information</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Challenge:</span>
+                            <span id="detail-challenge">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Difficulty:</span>
+                            <span id="detail-difficulty">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Status:</span>
+                            <span id="detail-status">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Tests Passed:</span>
+                            <span id="detail-tests">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Execution Details</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Execution Time:</span>
+                            <span id="detail-time">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Memory Used:</span>
+                            <span id="detail-memory">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Points Awarded:</span>
+                            <span id="detail-points">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Submitted:</span>
+                            <span id="detail-date">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section" id="error-section" style="display: none;">
+                    <h3>Error Message</h3>
+                    <pre id="detail-error" class="code-block"></pre>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Your Code</h3>
+                    <pre id="detail-code" class="code-block"></pre>
+                </div>
+
+                <div class="detail-section" id="test-results-section">
+                    <h3>Test Results</h3>
+                    <div id="detail-test-results"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="retry-button" class="btn-primary">Try Again</button>
+                <button class="btn-secondary modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/csrf.js"></script>
+    <script src="../js/navbar.js"></script>
+    <script src="../js/history.js"></script>
+</body>
+</html>
+

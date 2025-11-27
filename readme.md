@@ -9,7 +9,7 @@ The goal for this project is to have a working daily coding challenge game, wher
 
 ## Running Locally
 
-1. Set password in env.json
+1. Copy `env.example` to `.env` and set your database password and API keys
 2. Make sure you're in the root directory
 3. `npm i`
 4. `npm run setup`

@@ -21,6 +21,27 @@ registerButton.addEventListener("click", async (e) => {
         return;
     }
 
+    // Validate password strength (must match backend requirements)
+    if (pass.length < 8) {
+        showMessage("Password must be at least 8 characters long", true);
+        return;
+    }
+    
+    if (!/[A-Z]/.test(pass)) {
+        showMessage("Password must contain at least one uppercase letter", true);
+        return;
+    }
+    
+    if (!/[a-z]/.test(pass)) {
+        showMessage("Password must contain at least one lowercase letter", true);
+        return;
+    }
+    
+    if (!/[0-9]/.test(pass)) {
+        showMessage("Password must contain at least one number", true);
+        return;
+    }
+
     // Disable button while registering
     registerButton.disabled = true;
     registerButton.textContent = "Registering...";
