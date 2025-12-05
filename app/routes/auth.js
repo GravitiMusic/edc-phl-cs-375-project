@@ -151,21 +151,31 @@ router.post("/login", authLimiter, async (req, res) => {
  * Get current logged-in user info
  */
 router.get("/me", (req, res) => {
-  // Check if user has a session
-  if (req.session && req.session.userId) {
-    return res.json({
-      authenticated: true,
-      user: {
-        id: req.session.userId,
-        username: req.session.username
-      }
+  try {
+    // Check if user has a session
+    if (req.session && req.session.userId) {
+      console.log('✅ /auth/me - User authenticated:', req.session.userId);
+      return res.json({
+        authenticated: true,
+        user: {
+          id: req.session.userId,
+          username: req.session.username
+        }
+      });
+    }
+    
+    // Not logged in
+    console.log('⚠️ /auth/me - No session found');
+    return res.json({ 
+      authenticated: false 
+    });
+  } catch (error) {
+    console.error('❌ /auth/me error:', error);
+    return res.status(500).json({
+      authenticated: false,
+      error: 'Failed to check authentication'
     });
   }
-  
-  // Not logged in
-  return res.json({ 
-    authenticated: false 
-  });
 });
 
 /**

@@ -3,30 +3,58 @@
  * Handles authentication, CodeMirror editor, and daily challenge
  */
 
-import { EditorState } from "https://esm.sh/@codemirror/state";
-import { EditorView, basicSetup } from "https://esm.sh/codemirror";
-import { python } from "https://esm.sh/@codemirror/lang-python";
-import { javascript } from "https://esm.sh/@codemirror/lang-javascript";
-import { java } from "https://esm.sh/@codemirror/lang-java";
-import { cpp } from "https://esm.sh/@codemirror/lang-cpp";
+import { EditorState } from "https://esm.sh/@codemirror/state@6.4.1";
+import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.1";
+import { python } from "https://esm.sh/@codemirror/lang-python@6.1.7";
+import { javascript } from "https://esm.sh/@codemirror/lang-javascript@6.1.9";
+import { java } from "https://esm.sh/@codemirror/lang-java@6.0.3";
+import { cpp } from "https://esm.sh/@codemirror/lang-cpp@6.0.2";
 
 let editor = null;
 let currentLanguageId = 71; // Default to Python
+let codeMirrorLoaded = false;
 
-// Language configurations
+// Language configurations - will be populated after CodeMirror loads
 const languageConfigs = {
-  71: { name: 'Python', extension: python(), defaultCode: 'def two_sum(nums, target):\n    # Write your solution here\n    pass\n\n# Test your code\nnums = [2, 7, 11, 15]\ntarget = 9\nprint(two_sum(nums, target))' },
-  63: { name: 'JavaScript', extension: javascript(), defaultCode: 'function twoSum(nums, target) {\n    // Write your solution here\n}\n\n// Test your code\nconst nums = [2, 7, 11, 15];\nconst target = 9;\nconsole.log(twoSum(nums, target));' },
-  62: { name: 'Java', extension: java(), defaultCode: 'class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Write your solution here\n        return new int[]{};\n    }\n    \n    public static void main(String[] args) {\n        Solution sol = new Solution();\n        int[] nums = {2, 7, 11, 15};\n        int target = 9;\n        int[] result = sol.twoSum(nums, target);\n        System.out.println(java.util.Arrays.toString(result));\n    }\n}' },
-  50: { name: 'C', extension: cpp(), defaultCode: '#include <stdio.h>\n\nvoid two_sum(int* nums, int numsSize, int target) {\n    // Write your solution here\n}\n\nint main() {\n    int nums[] = {2, 7, 11, 15};\n    int target = 9;\n    two_sum(nums, 4, target);\n    return 0;\n}' },
-  54: { name: 'C++', extension: cpp(), defaultCode: '#include <iostream>\n#include <vector>\nusing namespace std;\n\nvector<int> twoSum(vector<int>& nums, int target) {\n    // Write your solution here\n    return {};\n}\n\nint main() {\n    vector<int> nums = {2, 7, 11, 15};\n    int target = 9;\n    vector<int> result = twoSum(nums, target);\n    for (int i : result) {\n        cout << i << " ";\n    }\n    return 0;\n}' }
+  71: { 
+    name: 'Python', 
+    getExtension: () => python(), 
+    defaultCode: 'def two_sum(nums, target):\n    # Write your solution here\n    pass\n\n# Test your code\nnums = [2, 7, 11, 15]\ntarget = 9\nprint(two_sum(nums, target))' 
+  },
+  63: { 
+    name: 'JavaScript', 
+    getExtension: () => javascript(), 
+    defaultCode: 'function twoSum(nums, target) {\n    // Write your solution here\n}\n\n// Test your code\nconst nums = [2, 7, 11, 15];\nconst target = 9;\nconsole.log(twoSum(nums, target));' 
+  },
+  62: { 
+    name: 'Java', 
+    getExtension: () => java(), 
+    defaultCode: 'class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Write your solution here\n        return new int[]{};\n    }\n    \n    public static void main(String[] args) {\n        Solution sol = new Solution();\n        int[] nums = {2, 7, 11, 15};\n        int target = 9;\n        int[] result = sol.twoSum(nums, target);\n        System.out.println(java.util.Arrays.toString(result));\n    }\n}' 
+  },
+  50: { 
+    name: 'C', 
+    getExtension: () => cpp(), 
+    defaultCode: '#include <stdio.h>\n\nvoid two_sum(int* nums, int numsSize, int target) {\n    // Write your solution here\n}\n\nint main() {\n    int nums[] = {2, 7, 11, 15};\n    int target = 9;\n    two_sum(nums, 4, target);\n    return 0;\n}' 
+  },
+  54: { 
+    name: 'C++', 
+    getExtension: () => cpp(), 
+    defaultCode: '#include <iostream>\n#include <vector>\nusing namespace std;\n\nvector<int> twoSum(vector<int>& nums, int target) {\n    // Write your solution here\n    return {};\n}\n\nint main() {\n    vector<int> nums = {2, 7, 11, 15};\n    int target = 9;\n    vector<int> result = twoSum(nums, target);\n    for (int i : result) {\n        cout << i << " ";\n    }\n    return 0;\n}' 
+  }
 };
 
 /**
  * Initialize the CodeMirror editor
  */
 function initializeEditor() {
+  if (!codeMirrorLoaded) {
+    console.warn('CodeMirror not loaded yet, waiting...');
+    setTimeout(initializeEditor, 100);
+    return;
+  }
+  
   const editorContainer = document.getElementById('codeEditor');
+  const config = languageConfigs[71]; // Python
   
   editor = new EditorView({
     state: EditorState.create({
@@ -39,7 +67,7 @@ function initializeEditor() {
     result = a + b  # TODO: change this to subtract instead of add
     return result
 `,
-      extensions: [basicSetup, languageConfigs[71].extension], //python
+      extensions: [basicSetup, config.getExtension()],
     }),
     parent: editorContainer,
   });
@@ -51,6 +79,11 @@ function initializeEditor() {
  * Change programming language
  */
 function changeLanguage(languageId) {
+  if (!codeMirrorLoaded) {
+    console.warn('CodeMirror not loaded yet');
+    return;
+  }
+  
   currentLanguageId = parseInt(languageId);
   const config = languageConfigs[currentLanguageId];
   
@@ -69,7 +102,7 @@ function changeLanguage(languageId) {
   editor = new EditorView({
     state: EditorState.create({
       doc: config.defaultCode,
-      extensions: [basicSetup, config.extension],
+      extensions: [basicSetup, config.getExtension()],
     }),
     parent: editorContainer,
   });
@@ -189,8 +222,16 @@ function displayChallengeDate() {
  */
 async function checkAuth() {
   try {
+    console.log('Checking authentication...');
     const response = await fetch('/auth/me');
+    
+    if (!response.ok) {
+      console.error('Auth check failed with status:', response.status);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json();
+    console.log('Auth response:', data);
 
     if (data.authenticated) {
       // User is logged in - show their info
@@ -202,7 +243,19 @@ async function checkAuth() {
     }
   } catch (error) {
     console.error('Error checking authentication:', error);
-    window.location.href = '/pages/login.html';
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack
+    });
+    // Show error to user instead of immediately redirecting
+    document.getElementById('loading').innerHTML = `
+      <div class="loading-spinner"></div>
+      <p>Error loading page: ${error.message}</p>
+      <p style="margin-top: 1rem; font-size: 0.9rem;">Redirecting to login...</p>
+    `;
+    setTimeout(() => {
+      window.location.href = '/pages/login.html';
+    }, 3000);
   }
 }
 
