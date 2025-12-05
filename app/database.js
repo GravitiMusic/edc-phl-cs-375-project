@@ -3,22 +3,40 @@ const { Pool } = require("pg");
 // Check if running in serverless environment (Vercel)
 const isServerless = process.env.VERCEL === '1' || process.env.AWS_LAMBDA_FUNCTION_NAME;
 
+// Prioritize connection strings for serverless compatibility
+// CRITICAL: Use NON_POOLING for serverless to avoid connection pooler limits
+// Vercel Supabase integration provides POSTGRES_URL_NON_POOLING, POSTGRES_URL, and DATABASE_URL
+const connectionString = process.env.POSTGRES_URL_NON_POOLING || 
+                         process.env.POSTGRES_URL || 
+                         process.env.DATABASE_URL;
+
 // Support both connection string (Supabase) and individual env vars
 let poolConfig;
 
-if (process.env.DATABASE_URL) {
+if (connectionString) {
   // Use connection string (Supabase provides this)
   poolConfig = {
-    connectionString: process.env.DATABASE_URL,
+    connectionString: connectionString,
     // Supabase requires SSL
     ssl: {
       rejectUnauthorized: false // Required for Supabase
     },
     // Connection pool settings - optimized for serverless
-    max: isServerless ? 2 : 20,
+    max: isServerless ? 1 : 20, // Use only 1 connection in serverless to avoid pooler limits
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000, // Increased timeout for cloud databases
   };
+  
+  // Log which connection source is being used (helpful for debugging)
+  if (isServerless) {
+    const source = process.env.POSTGRES_URL_NON_POOLING ? 'POSTGRES_URL_NON_POOLING' :
+                   process.env.POSTGRES_URL ? 'POSTGRES_URL' : 'DATABASE_URL';
+    console.log(`📦 Using ${source} for database connection`);
+    if (source !== 'POSTGRES_URL_NON_POOLING') {
+      console.warn(`⚠️  WARNING: Using ${source} instead of POSTGRES_URL_NON_POOLING.`);
+      console.warn('   This may cause connection issues. Set POSTGRES_URL_NON_POOLING in Vercel for better serverless compatibility.');
+    }
+  }
 } else {
   // Use individual environment variables
   poolConfig = {
@@ -32,7 +50,7 @@ if (process.env.DATABASE_URL) {
       rejectUnauthorized: false
     } : false,
     // Connection pool settings - optimized for serverless
-    max: isServerless ? 2 : 20,
+    max: isServerless ? 1 : 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000, // Increased timeout for cloud databases
   };
