@@ -8,7 +8,7 @@ let EditorState, EditorView, basicSetup, python;
 let codeMirrorLoaded = false;
 let codeMirrorLoading = false;
 
-// Load CodeMirror modules dynamically - use unpkg for better dependency sharing
+// Load CodeMirror modules dynamically - use ?bundle parameter to ensure ES module loading
 async function loadCodeMirror() {
   if (codeMirrorLoading || codeMirrorLoaded) {
     return; // Already loading or loaded
@@ -17,18 +17,15 @@ async function loadCodeMirror() {
   codeMirrorLoading = true;
   
   try {
-    // Use unpkg which handles ES modules better and avoids multiple instances
-    // Load state first
-    const stateModule = await import("https://unpkg.com/@codemirror/state@6.4.1/dist/index.js");
+    // Use unpkg with ?bundle parameter to ensure ES modules and prevent multiple instances
+    const stateModule = await import("https://unpkg.com/@codemirror/state@6.4.1?bundle");
     EditorState = stateModule.EditorState;
     
-    // Then load codemirror
-    const codemirrorModule = await import("https://unpkg.com/codemirror@6.0.1/dist/index.js");
+    const codemirrorModule = await import("https://unpkg.com/codemirror@6.0.1?bundle");
     EditorView = codemirrorModule.EditorView;
     basicSetup = codemirrorModule.basicSetup;
     
-    // Finally load python lang support
-    const pythonModule = await import("https://unpkg.com/@codemirror/lang-python@6.1.7/dist/index.js");
+    const pythonModule = await import("https://unpkg.com/@codemirror/lang-python@6.1.7?bundle");
     python = pythonModule.python;
     
     codeMirrorLoaded = true;
