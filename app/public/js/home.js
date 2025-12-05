@@ -3,41 +3,63 @@
  * Handles authentication, CodeMirror editor, and daily challenge
  */
 
-// Use dynamic imports to avoid transformation issues
+// Use dynamic imports - load state first, then other modules that depend on it
 let EditorState, EditorView, basicSetup, python;
 let codeMirrorLoaded = false;
+let codeMirrorLoading = false;
 
-// Load CodeMirror modules dynamically
-(async function loadCodeMirror() {
+// Load CodeMirror modules dynamically - use unpkg for better dependency sharing
+async function loadCodeMirror() {
+  if (codeMirrorLoading || codeMirrorLoaded) {
+    return; // Already loading or loaded
+  }
+  
+  codeMirrorLoading = true;
+  
   try {
-    const stateModule = await import("https://esm.sh/@codemirror/state@6.4.1?bundle");
-    const codemirrorModule = await import("https://esm.sh/codemirror@6.0.1?bundle");
-    const pythonModule = await import("https://esm.sh/@codemirror/lang-python@6.1.7?bundle");
-    
+    // Use unpkg which handles ES modules better and avoids multiple instances
+    // Load state first
+    const stateModule = await import("https://unpkg.com/@codemirror/state@6.4.1/dist/index.js");
     EditorState = stateModule.EditorState;
+    
+    // Then load codemirror
+    const codemirrorModule = await import("https://unpkg.com/codemirror@6.0.1/dist/index.js");
     EditorView = codemirrorModule.EditorView;
     basicSetup = codemirrorModule.basicSetup;
+    
+    // Finally load python lang support
+    const pythonModule = await import("https://unpkg.com/@codemirror/lang-python@6.1.7/dist/index.js");
     python = pythonModule.python;
     
     codeMirrorLoaded = true;
+    codeMirrorLoading = false;
     console.log('✅ CodeMirror modules loaded successfully');
-    
-    // Initialize editor if page is ready
-    if (document.getElementById('codeEditor')) {
-      initializeEditor();
-    }
   } catch (error) {
+    codeMirrorLoading = false;
     console.error('❌ Failed to load CodeMirror modules:', error);
-    const loadingEl = document.getElementById('loading');
-    if (loadingEl) {
-      loadingEl.innerHTML = `
-        <div class="loading-spinner"></div>
-        <p>Error loading code editor. Please refresh the page.</p>
-        <p style="margin-top: 1rem; font-size: 0.9rem;">${error.message}</p>
-      `;
+    // Fallback to esm.sh if unpkg fails
+    try {
+      console.log('Trying esm.sh as fallback...');
+      const stateModule = await import("https://esm.sh/@codemirror/state@6.4.1");
+      const codemirrorModule = await import("https://esm.sh/codemirror@6.0.1");
+      const pythonModule = await import("https://esm.sh/@codemirror/lang-python@6.1.7");
+      
+      EditorState = stateModule.EditorState;
+      EditorView = codemirrorModule.EditorView;
+      basicSetup = codemirrorModule.basicSetup;
+      python = pythonModule.python;
+      
+      codeMirrorLoaded = true;
+      codeMirrorLoading = false;
+      console.log('✅ CodeMirror modules loaded via esm.sh fallback');
+    } catch (fallbackError) {
+      console.error('❌ Fallback also failed:', fallbackError);
     }
   }
-})();
+}
+
+// Start loading CodeMirror immediately
+loadCodeMirror();
 
 let editor = null;
 let currentLanguageId = 71; // Default to Python
@@ -55,18 +77,23 @@ const languageConfigs = {
  * Initialize the CodeMirror editor
  */
 function initializeEditor() {
-  if (!codeMirrorLoaded) {
+  if (!codeMirrorLoaded || !EditorView || !EditorState || !basicSetup || !python) {
     console.warn('CodeMirror not loaded yet, waiting...');
-    setTimeout(initializeEditor, 100);
+    setTimeout(initializeEditor, 200);
     return;
   }
   
   const editorContainer = document.getElementById('codeEditor');
-  const config = languageConfigs[71]; // Python
+  if (!editorContainer) {
+    return;
+  }
   
-  editor = new EditorView({
-    state: EditorState.create({
-      doc: `def subtract_numbers(a, b):
+  try {
+    const config = languageConfigs[71]; // Python
+    
+    editor = new EditorView({
+      state: EditorState.create({
+        doc: `def subtract_numbers(a, b):
     """
     This function should subtract b from a.
     Right now it performs the wrong operation.
@@ -75,12 +102,22 @@ function initializeEditor() {
     result = a + b  # TODO: change this to subtract instead of add
     return result
 `,
-      extensions: [basicSetup, config.getExtension()],
-    }),
-    parent: editorContainer,
-  });
+        extensions: [basicSetup, config.getExtension()],
+      }),
+      parent: editorContainer,
+    });
 
-  console.log('✅ Code editor initialized');
+    console.log('✅ Code editor initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize editor:', error);
+    // Show a fallback message but don't break the page
+    editorContainer.innerHTML = `
+      <div style="padding: 2rem; text-align: center; color: #666; border: 1px solid #ddd; border-radius: 4px;">
+        <p>⚠️ Code editor could not be loaded.</p>
+        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Please refresh the page to try again.</p>
+      </div>
+    `;
+  }
 }
 
 /**
@@ -255,15 +292,33 @@ async function checkAuth() {
       message: error.message,
       stack: error.stack
     });
-    // Show error to user instead of immediately redirecting
-    document.getElementById('loading').innerHTML = `
-      <div class="loading-spinner"></div>
-      <p>Error loading page: ${error.message}</p>
-      <p style="margin-top: 1rem; font-size: 0.9rem;">Redirecting to login...</p>
-    `;
-    setTimeout(() => {
-      window.location.href = '/pages/login.html';
-    }, 3000);
+    
+    // Only redirect if it's actually an auth/network error
+    // Don't redirect for CodeMirror or other non-auth errors
+    const isAuthError = error.message.includes('HTTP error') || 
+                       error.message.includes('Failed to fetch') ||
+                       error.message.includes('401') ||
+                       error.message.includes('403');
+    
+    if (isAuthError) {
+      // Show error to user instead of immediately redirecting
+      const loadingEl = document.getElementById('loading');
+      if (loadingEl) {
+        loadingEl.innerHTML = `
+          <div class="loading-spinner"></div>
+          <p>Error loading page: ${error.message}</p>
+          <p style="margin-top: 1rem; font-size: 0.9rem;">Redirecting to login...</p>
+        `;
+      }
+      setTimeout(() => {
+        window.location.href = '/pages/login.html';
+      }, 3000);
+    } else {
+      // For other errors (like CodeMirror), just show the page without editor
+      console.warn('Non-auth error, showing page anyway:', error.message);
+      // Try to get user info from session if available, otherwise use fallback
+      displayUserInfo({ username: 'User' }); // Fallback user info
+    }
   }
 }
 
@@ -282,7 +337,23 @@ function displayUserInfo(user) {
   }
 
   // Initialize the editor now that the page is visible
-  initializeEditor();
+  // Wrap in try-catch to prevent CodeMirror errors from breaking the page
+  try {
+    initializeEditor();
+  } catch (error) {
+    console.error('Editor initialization error (non-fatal):', error);
+    // Page will still work, just without editor
+    const editorContainer = document.getElementById('codeEditor');
+    if (editorContainer) {
+      editorContainer.innerHTML = `
+        <div style="padding: 2rem; text-align: center; color: #666; border: 1px solid #ddd; border-radius: 4px;">
+          <p>⚠️ Code editor could not be loaded.</p>
+          <p style="font-size: 0.9rem; margin-top: 0.5rem;">Please refresh the page to try again.</p>
+        </div>
+      `;
+    }
+  }
+  
   displayChallengeDate();
 
   // Set up event listeners
