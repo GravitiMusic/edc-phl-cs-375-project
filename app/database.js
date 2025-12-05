@@ -4,7 +4,6 @@ const path = require("path");
 
 const isServerless = process.env.VERCEL === "1" || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-// Pick the best URL env var (Supabase + Vercel integration)
 const rawUrl =
   process.env.POSTGRES_URL_NON_POOLING ||
   process.env.POSTGRES_URL ||
@@ -12,36 +11,37 @@ const rawUrl =
 
 if (!rawUrl) {
   console.error("❌ No database URL found in POSTGRES_URL_NON_POOLING / POSTGRES_URL / DATABASE_URL");
+} else {
+  try {
+    const safeUrl = new URL(rawUrl);
+    safeUrl.password = "****";
+    console.log("🔍 Using DB URL:", safeUrl.toString());
+  } catch (e) {
+    console.error("❌ Failed to parse DB URL for logging:", e.message);
+  }
 }
 
-// ---------- SSL CONFIG ----------
+// ---- SSL ----
 let sslConfig;
 const caCertPath = path.join(__dirname, "certs", "supabase-ca.crt");
 
 try {
   if (fs.existsSync(caCertPath)) {
     const ca = fs.readFileSync(caCertPath, "utf8");
-    sslConfig = {
-      ca,
-      rejectUnauthorized: true, // full verification with Supabase CA
-    };
+    sslConfig = { ca, rejectUnauthorized: true };
     console.log("✅ Using Supabase SSL certificate for secure connection");
   } else {
     console.warn(`⚠️  SSL certificate not found at ${caCertPath}`);
-    console.warn("   Falling back to rejectUnauthorized: false (less secure)");
-    sslConfig = {
-      rejectUnauthorized: false,
-    };
+    console.warn("   Falling back to rejectUnauthorized: false");
+    sslConfig = { rejectUnauthorized: false };
   }
 } catch (error) {
   console.error("❌ Error loading SSL certificate:", error.message);
   console.warn("   Falling back to rejectUnauthorized: false");
-  sslConfig = {
-    rejectUnauthorized: false,
-  };
+  sslConfig = { rejectUnauthorized: false };
 }
 
-// ---------- PARSE URL INTO PARTS ----------
+// ---- PARSE URL INTO PARTS ----
 let poolConfig = {
   max: isServerless ? 1 : 20,
   idleTimeoutMillis: 30000,
@@ -67,6 +67,7 @@ if (rawUrl) {
       port: poolConfig.port,
       database: poolConfig.database,
       serverless: isServerless,
+      sslRejectUnauthorized: poolConfig.ssl.rejectUnauthorized,
     });
   } catch (e) {
     console.error("❌ Failed to parse database URL:", e.message);
@@ -74,31 +75,5 @@ if (rawUrl) {
 }
 
 const pool = new Pool(poolConfig);
-
-// Test database connection (non-blocking for serverless)
-if (!isServerless) {
-  pool
-    .connect()
-    .then((client) => {
-      console.log("✅ Connected to database successfully");
-      client.release();
-    })
-    .catch((err) => {
-      console.error("❌ Failed to connect to database:", err.message);
-      process.exit(1);
-    });
-} else {
-  console.log(
-    "📦 Serverless environment detected - database connections will be established on demand"
-  );
-}
-
-pool.on("error", (err) => {
-  console.error("❌ Unexpected database pool error:", {
-    message: err.message,
-    code: err.code,
-    stack: err.stack,
-  });
-});
 
 module.exports = pool;
