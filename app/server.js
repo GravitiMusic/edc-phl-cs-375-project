@@ -1,5 +1,8 @@
-// Load environment variables from .env file
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+// Load environment variables from .env file (only in local development)
+// Vercel injects env vars automatically, so dotenv is not needed there
+if (process.env.VERCEL !== '1' && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+}
 
 const path = require("path");
 const express = require("express");
@@ -13,6 +16,12 @@ const app = express();
 
 const port = process.env.PORT || 3000;
 const hostname = process.env.HOSTNAME || "localhost";
+
+// Trust proxy - Required for Vercel and other reverse proxies
+// This allows Express to correctly identify the client IP from X-Forwarded-* headers
+if (process.env.VERCEL === '1' || process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // Trust first proxy (Vercel)
+}
 
 // Static files
 app.use(express.static(path.join(__dirname, "public")));
@@ -52,13 +61,53 @@ app.use('/auth', generalLimiter);
 
 // Session configuration
 const isProduction = process.env.NODE_ENV === 'production';
-app.use(session({
-  store: new pgSession({
+
+// Ensure SESSION_SECRET is set (required for sessions)
+// Check for both undefined and empty string
+const sessionSecret = process.env.SESSION_SECRET?.trim();
+if (!sessionSecret || sessionSecret.length === 0) {
+  console.error('❌ ERROR: SESSION_SECRET environment variable is not set or is empty!');
+  console.error('   This is required for session management.');
+  console.error('   Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+  if (process.env.VERCEL === '1') {
+    console.error('   Set it in your Vercel project settings under Environment Variables');
+    console.error('   Go to: Project Settings → Environment Variables → Add SESSION_SECRET');
+  }
+  // In serverless, we can't exit, but we'll use a fallback and log the error
+  // This will allow the app to start but sessions won't work securely
+  console.error('⚠️  WARNING: Using a fallback secret. Sessions will not persist across deployments!');
+}
+
+// Use provided secret or generate a fallback (fallback is not secure for production)
+const finalSessionSecret = sessionSecret || 'fallback-secret-' + require('crypto').randomBytes(16).toString('hex');
+
+// Initialize session store with error handling
+let sessionStore;
+try {
+  sessionStore = new pgSession({
     pool: db,
     tableName: 'session',
     pruneSessionInterval: 60 * 15 // Clean up expired sessions every 15 minutes
-  }),
-  secret: process.env.SESSION_SECRET,
+  });
+  
+  // Test session store connection
+  sessionStore.on('connect', () => {
+    console.log('✅ Session store connected successfully');
+  });
+  
+  sessionStore.on('error', (error) => {
+    console.error('❌ Session store error:', error);
+    console.error('   Make sure the session table exists in your database');
+    console.error('   Run the SQL from create-session-table.sql in your Supabase SQL Editor');
+  });
+} catch (error) {
+  console.error('❌ Failed to initialize session store:', error);
+  console.error('   Error details:', error.message);
+}
+
+app.use(session({
+  store: sessionStore,
+  secret: finalSessionSecret,
   resave: false,
   saveUninitialized: false,
   name: 'sessionId', // Change default name from 'connect.sid' for security through obscurity
@@ -231,7 +280,16 @@ app.use((req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  console.error('Error stack:', err.stack);
+  console.error('Request path:', req.path);
+  console.error('Request method:', req.method);
+  
+  // In development, send more error details
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  res.status(500).json({ 
+    error: 'Internal server error',
+    ...(isDevelopment && { details: err.message, stack: err.stack })
+  });
 });
 
 // Only start server if not running on Vercel (serverless)

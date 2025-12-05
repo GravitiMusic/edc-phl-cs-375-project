@@ -21,9 +21,10 @@ if (connectionString) {
   // Use connection string (Supabase provides this)
   poolConfig = {
     connectionString: connectionString,
-    // Supabase requires SSL
+    // Supabase requires SSL with self-signed certificates
+    // Always set rejectUnauthorized: false for Supabase connections
     ssl: {
-      rejectUnauthorized: false // Required for Supabase
+      rejectUnauthorized: false // Required for Supabase (self-signed certs)
     },
     // Connection pool settings - optimized for serverless
     max: isServerless ? 2 : 20,
