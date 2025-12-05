@@ -6,40 +6,18 @@
 import { EditorState } from "https://esm.sh/@codemirror/state@6.4.1";
 import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.1";
 import { python } from "https://esm.sh/@codemirror/lang-python@6.1.7";
-//import { javascript } from "https://esm.sh/@codemirror/lang-javascript@6.1.9";
-//import { java } from "https://esm.sh/@codemirror/lang-java@6.0.3";
-//import { cpp } from "https://esm.sh/@codemirror/lang-cpp@6.0.2";
 
 let editor = null;
 let currentLanguageId = 71; // Default to Python
-let codeMirrorLoaded = false;
+// CodeMirror is loaded via ES6 imports, so it's available immediately
+const codeMirrorLoaded = true;
 
-// Language configurations - will be populated after CodeMirror loads
+// Language configurations - Python only for now
 const languageConfigs = {
   71: { 
     name: 'Python', 
     getExtension: () => python(), 
     defaultCode: 'def two_sum(nums, target):\n    # Write your solution here\n    pass\n\n# Test your code\nnums = [2, 7, 11, 15]\ntarget = 9\nprint(two_sum(nums, target))' 
-  },
-  63: { 
-    name: 'JavaScript', 
-    getExtension: () => javascript(), 
-    defaultCode: 'function twoSum(nums, target) {\n    // Write your solution here\n}\n\n// Test your code\nconst nums = [2, 7, 11, 15];\nconst target = 9;\nconsole.log(twoSum(nums, target));' 
-  },
-  62: { 
-    name: 'Java', 
-    getExtension: () => java(), 
-    defaultCode: 'class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Write your solution here\n        return new int[]{};\n    }\n    \n    public static void main(String[] args) {\n        Solution sol = new Solution();\n        int[] nums = {2, 7, 11, 15};\n        int target = 9;\n        int[] result = sol.twoSum(nums, target);\n        System.out.println(java.util.Arrays.toString(result));\n    }\n}' 
-  },
-  50: { 
-    name: 'C', 
-    getExtension: () => cpp(), 
-    defaultCode: '#include <stdio.h>\n\nvoid two_sum(int* nums, int numsSize, int target) {\n    // Write your solution here\n}\n\nint main() {\n    int nums[] = {2, 7, 11, 15};\n    int target = 9;\n    two_sum(nums, 4, target);\n    return 0;\n}' 
-  },
-  54: { 
-    name: 'C++', 
-    getExtension: () => cpp(), 
-    defaultCode: '#include <iostream>\n#include <vector>\nusing namespace std;\n\nvector<int> twoSum(vector<int>& nums, int target) {\n    // Write your solution here\n    return {};\n}\n\nint main() {\n    vector<int> nums = {2, 7, 11, 15};\n    int target = 9;\n    vector<int> result = twoSum(nums, target);\n    for (int i : result) {\n        cout << i << " ";\n    }\n    return 0;\n}' 
   }
 };
 
@@ -79,11 +57,6 @@ function initializeEditor() {
  * Change programming language
  */
 function changeLanguage(languageId) {
-  if (!codeMirrorLoaded) {
-    console.warn('CodeMirror not loaded yet');
-    return;
-  }
-  
   currentLanguageId = parseInt(languageId);
   const config = languageConfigs[currentLanguageId];
   
