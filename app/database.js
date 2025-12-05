@@ -2,30 +2,33 @@ const { Pool } = require("pg");
 const fs = require("fs");
 const path = require("path");
 
-const isServerless = process.env.VERCEL === '1' || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+const isServerless = process.env.VERCEL === "1" || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-const connectionString =
+// Pick the best URL env var (Supabase + Vercel integration)
+const rawUrl =
   process.env.POSTGRES_URL_NON_POOLING ||
   process.env.POSTGRES_URL ||
   process.env.DATABASE_URL;
 
-// Load Supabase CA cert
+if (!rawUrl) {
+  console.error("❌ No database URL found in POSTGRES_URL_NON_POOLING / POSTGRES_URL / DATABASE_URL");
+}
+
+// ---------- SSL CONFIG ----------
 let sslConfig;
 const caCertPath = path.join(__dirname, "certs", "supabase-ca.crt");
 
 try {
   if (fs.existsSync(caCertPath)) {
-    const ca = fs.readFileSync(caCertPath).toString();
+    const ca = fs.readFileSync(caCertPath, "utf8");
     sslConfig = {
-      ca,                   // ← TRUST Supabase's certificate
-      rejectUnauthorized: true,  // ← perform full verification
+      ca,
+      rejectUnauthorized: true, // full verification with Supabase CA
     };
     console.log("✅ Using Supabase SSL certificate for secure connection");
   } else {
-    // Fallback: Use SSL without certificate verification (for development or if cert not yet placed)
     console.warn(`⚠️  SSL certificate not found at ${caCertPath}`);
-    console.warn("   Using rejectUnauthorized: false (less secure)");
-    console.warn("   Place your Supabase certificate at app/certs/supabase-ca.crt for full SSL verification");
+    console.warn("   Falling back to rejectUnauthorized: false (less secure)");
     sslConfig = {
       rejectUnauthorized: false,
     };
@@ -38,13 +41,39 @@ try {
   };
 }
 
-const pool = new Pool({
-  connectionString,
-  ssl: sslConfig,
+// ---------- PARSE URL INTO PARTS ----------
+let poolConfig = {
   max: isServerless ? 1 : 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
-});
+  ssl: sslConfig,
+};
+
+if (rawUrl) {
+  try {
+    const url = new URL(rawUrl);
+
+    poolConfig = {
+      ...poolConfig,
+      user: decodeURIComponent(url.username),
+      password: decodeURIComponent(url.password),
+      host: url.hostname,
+      port: url.port ? parseInt(url.port, 10) : 5432,
+      database: url.pathname.slice(1), // strip leading '/'
+    };
+
+    console.log("📦 Database config (sanitized):", {
+      host: poolConfig.host,
+      port: poolConfig.port,
+      database: poolConfig.database,
+      serverless: isServerless,
+    });
+  } catch (e) {
+    console.error("❌ Failed to parse database URL:", e.message);
+  }
+}
+
+const pool = new Pool(poolConfig);
 
 // Test database connection (non-blocking for serverless)
 if (!isServerless) {
