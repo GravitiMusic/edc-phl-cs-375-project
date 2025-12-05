@@ -123,7 +123,7 @@ async function saveField(field) {
   saveButton.disabled = true;
 
   try {
-    const response = await window.csrfProtection.protectedFetch('/auth/profile', {
+    const response = await fetch('/auth/profile', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -270,7 +270,7 @@ async function changePassword() {
   button.disabled = true;
   
   try {
-    const response = await window.csrfProtection.protectedFetch('/auth/password', {
+    const response = await fetch('/auth/password', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'

@@ -468,13 +468,6 @@ async function runCode() {
     return;
   }
 
-  // Check if CSRF protection is loaded
-  if (!window.csrfProtection || !window.csrfProtection.protectedFetch) {
-    outputEl.textContent = '❌ Error: CSRF protection not loaded. Please refresh the page.';
-    console.error('csrfProtection not available');
-    return;
-  }
-
   runBtn.disabled = true;
   runBtn.innerHTML = '<span class="btn-icon">⏳</span><span>Running...</span>';
   outputEl.textContent = "⏳ Running your code...";
@@ -484,7 +477,7 @@ async function runCode() {
     const testCases = currentChallenge.test_cases;
     const codeWithTests = generatePythonTestHarness(code, testCases);
 
-    const response = await window.csrfProtection.protectedFetch("/run", {
+    const response = await fetch("/run", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -549,13 +542,6 @@ async function submitSolution() {
     return;
   }
 
-  // Check if CSRF protection is loaded
-  if (!window.csrfProtection || !window.csrfProtection.protectedFetch) {
-    outputEl.textContent = '❌ Error: CSRF protection not loaded. Please refresh the page.';
-    console.error('csrfProtection not available');
-    return;
-  }
-
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<span class="btn-icon">⏳</span>Submitting...';
   outputEl.textContent = "⏳ Submitting your solution...";
@@ -565,7 +551,7 @@ async function submitSolution() {
     const testCases = currentChallenge.test_cases;
     const codeWithTests = generatePythonTestHarness(code, testCases);
 
-    const response = await window.csrfProtection.protectedFetch("/submissions", {
+    const response = await fetch("/submissions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

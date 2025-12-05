@@ -115,7 +115,7 @@ async function logout() {
   try {
     console.log('Logging out...');
     
-    const response = await window.csrfProtection.protectedFetch('/auth/logout', {
+    const response = await fetch('/auth/logout', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

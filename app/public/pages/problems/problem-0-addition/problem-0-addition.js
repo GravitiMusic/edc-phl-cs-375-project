@@ -161,7 +161,7 @@ async function runCode() {
   outputEl.textContent = "⏳ Your code is being executed...";
 
   try {
-    const response = await window.csrfProtection.protectedFetch("/challenge/run", {
+    const response = await fetch("/challenge/run", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -229,7 +229,7 @@ async function submitSolution() {
   outputEl.textContent = "⏳ Submitting your solution...";
 
   try {
-    const response = await window.csrfProtection.protectedFetch("/submissions", {
+    const response = await fetch("/submissions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

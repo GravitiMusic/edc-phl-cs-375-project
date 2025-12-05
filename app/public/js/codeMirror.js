@@ -20,7 +20,7 @@ runButton.addEventListener("click", async () => {
 
   try {
     
-    const response = await window.csrfProtection.protectedFetch("/run", {
+    const response = await fetch("/run", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

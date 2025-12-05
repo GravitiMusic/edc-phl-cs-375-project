@@ -169,7 +169,7 @@ async function runCode() {
   outputEl.textContent = "⏳ Your code is being executed...";
 
   try {
-    const response = await window.csrfProtection.protectedFetch("/challenge/run", {
+    const response = await fetch("/challenge/run", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -418,7 +418,7 @@ async function logout() {
   try {
     console.log('Logging out...');
     
-    const response = await window.csrfProtection.protectedFetch('/auth/logout', {
+    const response = await fetch('/auth/logout', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

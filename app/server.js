@@ -124,11 +124,6 @@ app.use(session({
 const { attachUser, requireAuth } = require('./middleware/auth');
 app.use(attachUser);
 
-// Route to get CSRF token (returns dummy token for frontend compatibility)
-// Note: CSRF protection is provided by SameSite=strict cookies
-app.get('/csrf-token', (req, res) => {
-  res.json({ csrfToken: 'not-needed-samesite-cookie-protection' });
-});
 
 // Routes
 const authRoutes = require('./routes/auth');

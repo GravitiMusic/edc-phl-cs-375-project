@@ -47,7 +47,7 @@ registerButton.addEventListener("click", async (e) => {
     registerButton.textContent = "Registering...";
 
     try {
-        const response = await window.csrfProtection.protectedFetch("/auth/register", {
+        const response = await fetch("/auth/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
