@@ -3,14 +3,44 @@
  * Handles authentication, CodeMirror editor, and daily challenge
  */
 
-import { EditorState } from "https://esm.sh/@codemirror/state@6.4.1";
-import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.1";
-import { python } from "https://esm.sh/@codemirror/lang-python@6.1.7";
+// Use dynamic imports to avoid transformation issues
+let EditorState, EditorView, basicSetup, python;
+let codeMirrorLoaded = false;
+
+// Load CodeMirror modules dynamically
+(async function loadCodeMirror() {
+  try {
+    const stateModule = await import("https://esm.sh/@codemirror/state@6.4.1?bundle");
+    const codemirrorModule = await import("https://esm.sh/codemirror@6.0.1?bundle");
+    const pythonModule = await import("https://esm.sh/@codemirror/lang-python@6.1.7?bundle");
+    
+    EditorState = stateModule.EditorState;
+    EditorView = codemirrorModule.EditorView;
+    basicSetup = codemirrorModule.basicSetup;
+    python = pythonModule.python;
+    
+    codeMirrorLoaded = true;
+    console.log('✅ CodeMirror modules loaded successfully');
+    
+    // Initialize editor if page is ready
+    if (document.getElementById('codeEditor')) {
+      initializeEditor();
+    }
+  } catch (error) {
+    console.error('❌ Failed to load CodeMirror modules:', error);
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl) {
+      loadingEl.innerHTML = `
+        <div class="loading-spinner"></div>
+        <p>Error loading code editor. Please refresh the page.</p>
+        <p style="margin-top: 1rem; font-size: 0.9rem;">${error.message}</p>
+      `;
+    }
+  }
+})();
 
 let editor = null;
 let currentLanguageId = 71; // Default to Python
-// CodeMirror is loaded via ES6 imports, so it's available immediately
-const codeMirrorLoaded = true;
 
 // Language configurations - Python only for now
 const languageConfigs = {
@@ -57,6 +87,11 @@ function initializeEditor() {
  * Change programming language
  */
 function changeLanguage(languageId) {
+  if (!codeMirrorLoaded || !EditorView || !EditorState) {
+    console.warn('CodeMirror not loaded yet');
+    return;
+  }
+  
   currentLanguageId = parseInt(languageId);
   const config = languageConfigs[currentLanguageId];
   
