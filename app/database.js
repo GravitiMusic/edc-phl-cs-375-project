@@ -1,16 +1,25 @@
 const { Pool } = require("pg");
 
 // Use connection string from Vercel Supabase integration or fallback to DATABASE_URL
-const connectionString = process.env.POSTGRES_URL || 
-                        process.env.POSTGRES_URL_NON_POOLING || 
-                        process.env.DATABASE_URL;
+let connectionString = process.env.POSTGRES_URL || 
+                       process.env.POSTGRES_URL_NON_POOLING || 
+                       process.env.DATABASE_URL;
 
+// Remove any existing SSL parameters from connection string to avoid conflicts
+// We'll set SSL config explicitly below
+if (connectionString) {
+  connectionString = connectionString
+    .replace(/[?&]sslmode=[^&]*/gi, '')
+    .replace(/[?&]ssl=[^&]*/gi, '');
+}
+
+// Always use SSL with rejectUnauthorized: false for Supabase (self-signed certificates)
+// This is required for Supabase connections
 const pool = new Pool({
   connectionString: connectionString,
-  // Supabase requires SSL with self-signed certificates in production
-  ssl: process.env.NODE_ENV === 'production' || process.env.VERCEL === '1' 
-    ? { rejectUnauthorized: false } 
-    : false,
+  ssl: {
+    rejectUnauthorized: false
+  },
 });
 
 // Handle pool errors

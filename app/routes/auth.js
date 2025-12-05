@@ -132,7 +132,17 @@ router.post("/login", authLimiter, async (req, res) => {
 
   } catch (error) {
     console.error("Login error:", error);
-    return res.status(500).json({ error: "Login failed" });
+    console.error("Error stack:", error.stack);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      name: error.name
+    });
+    return res.status(500).json({ 
+      error: "Login failed",
+      // Include error details in development for debugging
+      ...(process.env.NODE_ENV !== 'production' && { details: error.message })
+    });
   }
 });
 
