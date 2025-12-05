@@ -6,7 +6,7 @@
 import { EditorState } from "https://esm.sh/@codemirror/state@6.4.1";
 import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.1";
 import { python } from "https://esm.sh/@codemirror/lang-python@6.1.7";
-import { javascript } from "https://esm.sh/@codemirror/lang-javascript@6.1.9";
+//import { javascript } from "https://esm.sh/@codemirror/lang-javascript@6.1.9";
 import { java } from "https://esm.sh/@codemirror/lang-java@6.0.3";
 import { cpp } from "https://esm.sh/@codemirror/lang-cpp@6.0.2";
 
