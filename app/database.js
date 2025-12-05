@@ -1,84 +1,92 @@
 const { Pool } = require("pg");
 
-// Detect serverless environment
+// Check if running in serverless environment (Vercel)
 const isServerless = process.env.VERCEL === '1' || process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-// Use connection string from Vercel Supabase integration
-// CRITICAL: Use NON_POOLING for serverless to avoid connection pooler limits
-// The pooler has strict limits in Session mode (max clients = pool_size)
-const connectionString = process.env.POSTGRES_URL_NON_POOLING || 
-                        process.env.POSTGRES_URL || 
-                        process.env.DATABASE_URL;
-
-// Parse connection string to use individual parameters with explicit SSL config
-// This ensures SSL settings are properly applied
+// Support both connection string (Supabase) and individual env vars
 let poolConfig;
 
-if (connectionString) {
-  try {
-    // Parse PostgreSQL connection string
-    // Handle both postgres:// and postgresql:// formats
-    const url = new URL(connectionString.replace(/^postgresql?:\/\//, 'https://'));
-    
-    poolConfig = {
-      user: decodeURIComponent(url.username),
-      password: decodeURIComponent(url.password),
-      host: url.hostname,
-      port: parseInt(url.port) || 5432,
-      database: url.pathname.slice(1) || 'postgres', // Remove leading slash
-      // Explicitly set SSL - this is required for Supabase
-      ssl: {
-        rejectUnauthorized: false // Required for Supabase self-signed certificates
-      },
-      // CRITICAL: Limit pool size for serverless to avoid "max clients reached" errors
-      // Supabase free tier has limited connections, and serverless functions should use minimal connections
-      max: isServerless ? 1 : 10, // Use only 1 connection in serverless, 10 in regular server
-      idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
-      connectionTimeoutMillis: 10000, // Timeout after 10 seconds if connection can't be established
-    };
-    
-    if (isServerless) {
-      console.log(`📦 Serverless mode: Using ${poolConfig.max} max connection(s) to ${url.hostname}:${poolConfig.port}`);
-      if (!process.env.POSTGRES_URL_NON_POOLING) {
-        console.warn('⚠️  WARNING: POSTGRES_URL_NON_POOLING not set. Using pooler URL may cause connection limit issues.');
-      }
-    }
-  } catch (parseError) {
-    // Fallback: use connection string directly
-    console.warn('⚠️ Could not parse connection string, using as-is');
-    poolConfig = {
-      connectionString: connectionString,
-      ssl: {
-        rejectUnauthorized: false
-      },
-      max: isServerless ? 1 : 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-    };
-  }
-} else {
-  // Fallback to individual environment variables
+if (process.env.DATABASE_URL) {
+  // Use connection string (Supabase provides this)
   poolConfig = {
-    user: process.env.POSTGRES_USER || process.env.DATABASE_USER,
-    host: process.env.POSTGRES_HOST || process.env.DATABASE_HOST,
-    database: process.env.POSTGRES_DATABASE || process.env.DATABASE_NAME,
-    password: process.env.POSTGRES_PASSWORD || process.env.DATABASE_PASSWORD,
-    port: parseInt(process.env.POSTGRES_PORT || process.env.DATABASE_PORT || '5432'),
+    connectionString: process.env.DATABASE_URL,
+    // Supabase requires SSL
     ssl: {
-      rejectUnauthorized: false
+      rejectUnauthorized: false // Required for Supabase
     },
-    max: isServerless ? 1 : 10,
+    // Connection pool settings - optimized for serverless
+    max: isServerless ? 2 : 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    connectionTimeoutMillis: 10000, // Increased timeout for cloud databases
+  };
+} else {
+  // Use individual environment variables
+  poolConfig = {
+    user: process.env.DATABASE_USER,
+    host: process.env.DATABASE_HOST,
+    database: process.env.DATABASE_NAME,
+    password: process.env.DATABASE_PASSWORD,
+    port: process.env.DATABASE_PORT,
+    // SSL for cloud databases (Supabase, etc.)
+    ssl: process.env.DATABASE_HOST && !process.env.DATABASE_HOST.includes('localhost') ? {
+      rejectUnauthorized: false
+    } : false,
+    // Connection pool settings - optimized for serverless
+    max: isServerless ? 2 : 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000, // Increased timeout for cloud databases
   };
 }
 
 const pool = new Pool(poolConfig);
 
+// Test database connection (non-blocking for serverless)
+if (!isServerless) {
+  // Only test connection in non-serverless environments
+  pool.connect()
+    .then((client) => {
+      console.log("✅ Connected to database successfully");
+      console.log(`   Database: ${process.env.DATABASE_NAME}`);
+      console.log(`   Host: ${process.env.DATABASE_HOST}:${process.env.DATABASE_PORT}`);
+      client.release(); // Release the test client back to the pool
+    })
+    .catch((err) => {
+      console.error("❌ Failed to connect to database:");
+      console.error(`   Error: ${err.message}`);
+      console.error("\n🔧 Troubleshooting steps:");
+      console.error("   1. Make sure PostgreSQL is running");
+      console.error("   2. Check your .env file has correct DATABASE_* settings");
+      console.error("   3. Verify the database exists: psql -U postgres -c '\\l'");
+      console.error("   4. Run 'npm run reset' to create the database\n");
+      process.exit(1); // Exit with error code (only in non-serverless)
+    });
+} else {
+  // In serverless, log that we're ready (connection will be established on first use)
+  console.log("📦 Serverless environment detected - database connections will be established on demand");
+}
+
 // Handle pool errors
 pool.on('error', (err, client) => {
   console.error('❌ Unexpected database pool error:', err);
+  console.error('Error details:', {
+    message: err.message,
+    code: err.code,
+    stack: err.stack
+  });
   // Don't exit - the pool will try to recover
+});
+
+// Add connection error handler with better logging
+pool.on('connect', (client) => {
+  console.log('✅ Database client connected');
+});
+
+pool.on('acquire', (client) => {
+  console.log('📦 Database client acquired from pool');
+});
+
+pool.on('remove', (client) => {
+  console.log('🗑️ Database client removed from pool');
 });
 
 module.exports = pool;
