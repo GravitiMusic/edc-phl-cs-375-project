@@ -7,21 +7,56 @@ const connectionString = process.env.POSTGRES_URL_NON_POOLING ||
                         process.env.POSTGRES_URL || 
                         process.env.DATABASE_URL;
 
-// Log which connection string is being used (for debugging)
-if (process.env.VERCEL === '1') {
-  const usingNonPooling = !!process.env.POSTGRES_URL_NON_POOLING;
-  const usingPooler = !!process.env.POSTGRES_URL && !process.env.POSTGRES_URL_NON_POOLING;
-  console.log(`📦 Database connection: ${usingNonPooling ? 'NON_POOLING (recommended)' : usingPooler ? 'POOLER' : 'CUSTOM'}`);
+// Parse connection string to use individual parameters with explicit SSL config
+// This ensures SSL settings are properly applied
+let poolConfig;
+
+if (connectionString) {
+  try {
+    // Parse PostgreSQL connection string
+    // Handle both postgres:// and postgresql:// formats
+    const url = new URL(connectionString.replace(/^postgresql?:\/\//, 'https://'));
+    
+    poolConfig = {
+      user: decodeURIComponent(url.username),
+      password: decodeURIComponent(url.password),
+      host: url.hostname,
+      port: parseInt(url.port) || 5432,
+      database: url.pathname.slice(1) || 'postgres', // Remove leading slash
+      // Explicitly set SSL - this is required for Supabase
+      ssl: {
+        rejectUnauthorized: false // Required for Supabase self-signed certificates
+      },
+    };
+    
+    if (process.env.VERCEL === '1') {
+      console.log(`📦 Using parsed connection: ${url.hostname}:${poolConfig.port}`);
+    }
+  } catch (parseError) {
+    // Fallback: use connection string directly
+    console.warn('⚠️ Could not parse connection string, using as-is');
+    poolConfig = {
+      connectionString: connectionString,
+      ssl: {
+        rejectUnauthorized: false
+      },
+    };
+  }
+} else {
+  // Fallback to individual environment variables
+  poolConfig = {
+    user: process.env.POSTGRES_USER || process.env.DATABASE_USER,
+    host: process.env.POSTGRES_HOST || process.env.DATABASE_HOST,
+    database: process.env.POSTGRES_DATABASE || process.env.DATABASE_NAME,
+    password: process.env.POSTGRES_PASSWORD || process.env.DATABASE_PASSWORD,
+    port: parseInt(process.env.POSTGRES_PORT || process.env.DATABASE_PORT || '5432'),
+    ssl: {
+      rejectUnauthorized: false
+    },
+  };
 }
 
-// Always use SSL with rejectUnauthorized: false for Supabase (self-signed certificates)
-// The SSL config object will override any SSL parameters in the connection string
-const pool = new Pool({
-  connectionString: connectionString,
-  ssl: {
-    rejectUnauthorized: false
-  },
-});
+const pool = new Pool(poolConfig);
 
 // Handle pool errors
 pool.on('error', (err, client) => {
