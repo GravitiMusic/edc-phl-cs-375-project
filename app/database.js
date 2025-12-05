@@ -1,8 +1,11 @@
 const { Pool } = require("pg");
 
+// Detect serverless environment
+const isServerless = process.env.VERCEL === '1' || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
 // Use connection string from Vercel Supabase integration
-// Prefer NON_POOLING for serverless (better connection handling)
-// Fallback to regular POSTGRES_URL or DATABASE_URL
+// CRITICAL: Use NON_POOLING for serverless to avoid connection pooler limits
+// The pooler has strict limits in Session mode (max clients = pool_size)
 const connectionString = process.env.POSTGRES_URL_NON_POOLING || 
                         process.env.POSTGRES_URL || 
                         process.env.DATABASE_URL;
@@ -27,10 +30,18 @@ if (connectionString) {
       ssl: {
         rejectUnauthorized: false // Required for Supabase self-signed certificates
       },
+      // CRITICAL: Limit pool size for serverless to avoid "max clients reached" errors
+      // Supabase free tier has limited connections, and serverless functions should use minimal connections
+      max: isServerless ? 1 : 10, // Use only 1 connection in serverless, 10 in regular server
+      idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
+      connectionTimeoutMillis: 10000, // Timeout after 10 seconds if connection can't be established
     };
     
-    if (process.env.VERCEL === '1') {
-      console.log(`📦 Using parsed connection: ${url.hostname}:${poolConfig.port}`);
+    if (isServerless) {
+      console.log(`📦 Serverless mode: Using ${poolConfig.max} max connection(s) to ${url.hostname}:${poolConfig.port}`);
+      if (!process.env.POSTGRES_URL_NON_POOLING) {
+        console.warn('⚠️  WARNING: POSTGRES_URL_NON_POOLING not set. Using pooler URL may cause connection limit issues.');
+      }
     }
   } catch (parseError) {
     // Fallback: use connection string directly
@@ -40,6 +51,9 @@ if (connectionString) {
       ssl: {
         rejectUnauthorized: false
       },
+      max: isServerless ? 1 : 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
     };
   }
 } else {
@@ -53,6 +67,9 @@ if (connectionString) {
     ssl: {
       rejectUnauthorized: false
     },
+    max: isServerless ? 1 : 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
   };
 }
 
