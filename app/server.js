@@ -11,8 +11,8 @@ const db = require("./database");
 
 const app = express();
 
-const port = 3000;
-const hostname = "localhost";
+const port = process.env.PORT || 3000;
+const hostname = process.env.HOSTNAME || "localhost";
 
 // Static files
 app.use(express.static(path.join(__dirname, "public")));
@@ -234,8 +234,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(port, hostname, () => {
-  console.log(`Listening at: http://${hostname}:${port}`);
-});
+// Only start server if not running on Vercel (serverless)
+if (process.env.VERCEL !== '1') {
+  app.listen(port, hostname, () => {
+    console.log(`Listening at: http://${hostname}:${port}`);
+  });
+}
 
+// Export for Vercel serverless function
 module.exports = app;

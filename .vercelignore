@@ -1,0 +1,13 @@
+node_modules
+.env
+.env.local
+*.log
+.git
+.gitignore
+README.md
+GETTING_STARTED.md
+SUBMISSION_SYSTEM.md
+seed.js
+seedSubmissions.js
+setup.sql
+
