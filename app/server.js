@@ -4,15 +4,18 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const path = require("path");
 const express = require("express");
 const session = require("express-session");
-const pgSession = require("connect-pg-simple")(session);
+// Temporarily use memory store until DATABASE_URL is fixed
+// const pgSession = require("connect-pg-simple")(session);
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
-const db = require("./database");
+// const db = require("./database-pg"); // Use pg connection for sessions (when DATABASE_URL works)
 
 const app = express();
 
-const port = 3000;
-const hostname = "localhost";
+// Use PORT from environment (Render provides this) or default to 3000 for local dev
+const port = process.env.PORT || 3000;
+// Use localhost for local dev, 0.0.0.0 for production (Render)
+const hostname = process.env.NODE_ENV === 'production' ? "0.0.0.0" : "localhost";
 
 // Static files
 app.use(express.static(path.join(__dirname, "public")));
@@ -52,23 +55,66 @@ app.use('/auth', generalLimiter);
 
 // Session configuration
 const isProduction = process.env.NODE_ENV === 'production';
+
+// Use memory store temporarily (sessions won't persist across restarts)
+// TODO: Switch back to pgSession when DATABASE_URL is working
+let sessionStore = undefined; // undefined = memory store
+
+// Try to use PostgreSQL session store if DATABASE_URL is available
+if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost')) {
+  try {
+    const pgSession = require("connect-pg-simple")(session);
+    const db = require("./database-pg");
+    
+    // Initialize session store (will fail gracefully if connection doesn't work)
+    sessionStore = new pgSession({
+      pool: db,
+      tableName: 'session',
+      pruneSessionInterval: 60 * 15,
+      createTableIfMissing: false
+    });
+    
+    // Test connection asynchronously (don't block startup)
+    db.connect()
+      .then((client) => {
+        client.release();
+        console.log('✅ Using PostgreSQL session store');
+      })
+      .catch((error) => {
+        console.warn('⚠️  PostgreSQL session store connection failed');
+        console.warn('   Sessions will fall back to memory store (won\'t persist across restarts)');
+        if (error.message.includes('Tenant or user not found') || error.code === 'XX000') {
+          console.warn('   Error: Invalid credentials or project reference');
+          console.warn('   → Check your DATABASE_URL password');
+          console.warn('   → Verify username: postgres.zoaosfjclyjahltdwcuz for connection pooling');
+          console.warn('   → Get correct connection string from Supabase Dashboard → Database');
+        } else {
+          console.warn('   Error:', error.message);
+        }
+      });
+  } catch (error) {
+    console.warn('⚠️  Could not initialize PostgreSQL session store, using memory store');
+    console.warn('   Error:', error.message);
+    sessionStore = undefined;
+  }
+} else {
+  console.warn('⚠️  Using memory session store (sessions won\'t persist across restarts)');
+  console.warn('   Set DATABASE_URL to use persistent sessions');
+}
+
 app.use(session({
-  store: new pgSession({
-    pool: db,
-    tableName: 'session',
-    pruneSessionInterval: 60 * 15 // Clean up expired sessions every 15 minutes
-  }),
-  secret: process.env.SESSION_SECRET,
+  store: sessionStore, // undefined = memory store
+  secret: process.env.SESSION_SECRET || 'fallback-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
-  name: 'sessionId', // Change default name from 'connect.sid' for security through obscurity
+  name: 'sessionId',
   cookie: {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     httpOnly: true,
-    secure: isProduction, // Use secure cookies in production (HTTPS only)
+    secure: isProduction,
     sameSite: 'strict'
   },
-  proxy: isProduction // Trust first proxy in production (nginx, etc.)
+  proxy: isProduction
 }));
 
 // Middleware to attach user info to every request

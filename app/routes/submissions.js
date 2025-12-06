@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database');
+const supabase = require('../database');
 const { requireAuth } = require('../middleware/auth');
 const { codeExecutionLimiter } = require('../middleware/rateLimiter');
 
@@ -91,22 +91,23 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
     };
 
     // Check if user already completed this challenge at this difficulty
-    const existingCompletion = await db.query(
-      'SELECT id FROM user_completions WHERE user_id = $1 AND challenge_id = $2 AND difficulty = $3 LIMIT 1',
-      [user_id, challenge_id, difficulty]
-    );
+    const { data: existingCompletion, error: completionError } = await supabase
+      .from('user_completions')
+      .select('id')
+      .eq('user_id', user_id)
+      .eq('challenge_id', challenge_id)
+      .eq('difficulty', difficulty)
+      .limit(1);
 
-    const isFirstCompletion = existingCompletion.rows.length === 0 && status === 'passed';
+    if (completionError) throw completionError;
+
+    const isFirstCompletion = (!existingCompletion || existingCompletion.length === 0) && status === 'passed';
     const points_earned = isFirstCompletion ? pointsMap[difficulty] : 0;
 
     // Save submission to database
-    const submissionResult = await db.query(
-      `INSERT INTO submissions 
-        (user_id, challenge_id, difficulty, source_code, language_id, status, tests_passed, tests_total, 
-         execution_time_ms, memory_used_kb, points_earned, error_message, submitted_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
-      RETURNING id, submitted_at`,
-      [
+    const { data: submissionData, error: submissionError } = await supabase
+      .from('submissions')
+      .insert({
         user_id,
         challenge_id,
         difficulty,
@@ -115,57 +116,75 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
         status,
         tests_passed,
         tests_total,
-        result.time ? Math.round(parseFloat(result.time) * 1000) : null, // Convert to ms
-        result.memory ? parseInt(result.memory) : null,
+        execution_time_ms: result.time ? Math.round(parseFloat(result.time) * 1000) : null,
+        memory_used_kb: result.memory ? parseInt(result.memory) : null,
         points_earned,
-        result.compile_output || result.stderr || null
-      ]
-    );
+        error_message: result.compile_output || result.stderr || null,
+        submitted_at: new Date().toISOString()
+      })
+      .select('id, submitted_at')
+      .single();
+
+    if (submissionError) throw submissionError;
 
     // Update user statistics if first completion
     if (isFirstCompletion) {
-      // Begin transaction for consistency
-      await db.query('BEGIN');
-      
       try {
         // Record completion
-        await db.query(
-          `INSERT INTO user_completions (user_id, challenge_id, difficulty, points_awarded, completed_at)
-           VALUES ($1, $2, $3, $4, NOW())`,
-          [user_id, challenge_id, difficulty, points_earned]
-        );
+        const { error: completionInsertError } = await supabase
+          .from('user_completions')
+          .insert({
+            user_id,
+            challenge_id,
+            difficulty,
+            points_awarded: points_earned,
+            completed_at: new Date().toISOString()
+          });
 
-        // Update user stats with difficulty-specific tracking
+        if (completionInsertError) throw completionInsertError;
+
+        // Get current user stats
+        const { data: currentUser, error: userFetchError } = await supabase
+          .from('users')
+          .select(`${difficulty}_completed, total_points, challenges_completed`)
+          .eq('id', user_id)
+          .single();
+
+        if (userFetchError) throw userFetchError;
+
+        // Update user stats
         const difficultyColumn = `${difficulty}_completed`;
-        await db.query(
-          `UPDATE users 
-           SET total_points = total_points + $1,
-               ${difficultyColumn} = ${difficultyColumn} + 1,
-               challenges_completed = challenges_completed + 1,
-               updated_at = NOW()
-           WHERE id = $2`,
-          [points_earned, user_id]
-        );
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({
+            total_points: (currentUser.total_points || 0) + points_earned,
+            [difficultyColumn]: (currentUser[difficultyColumn] || 0) + 1,
+            challenges_completed: (currentUser.challenges_completed || 0) + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user_id);
 
-        await db.query('COMMIT');
+        if (updateError) throw updateError;
+
         console.log(`✅ User ${user_id} completed challenge ${challenge_id} (${difficulty}) for the first time! +${points_earned} points`);
       } catch (err) {
-        await db.query('ROLLBACK');
-        throw err;
+        console.error('Error updating user stats:', err);
+        // Don't fail the submission if stats update fails
       }
     }
 
     // Get updated user stats
-    const userStats = await db.query(
-      'SELECT total_points, easy_completed, medium_completed, hard_completed, challenges_completed, day_streak FROM users WHERE id = $1',
-      [user_id]
-    );
+    const { data: userStats, error: statsError } = await supabase
+      .from('users')
+      .select('total_points, easy_completed, medium_completed, hard_completed, challenges_completed, day_streak')
+      .eq('id', user_id)
+      .single();
 
     // Return detailed results
     return res.json({
       success: true,
       submission: {
-        id: submissionResult.rows[0].id,
+        id: submissionData.id,
         status: status,
         tests_passed: tests_passed,
         tests_total: tests_total,
@@ -173,7 +192,7 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
         memory_used_kb: result.memory ? parseInt(result.memory) : null,
         points_earned: points_earned,
         is_first_completion: isFirstCompletion,
-        submitted_at: submissionResult.rows[0].submitted_at
+        submitted_at: submissionData.submitted_at
       },
       output: {
         stdout: stdout,
@@ -181,7 +200,7 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
         compile_output: result.compile_output || null,
         message: result.message || null
       },
-      user_stats: userStats.rows[0]
+      user_stats: statsError ? null : userStats
     });
 
   } catch (error) {
@@ -203,30 +222,31 @@ router.get('/history', requireAuth, async (req, res) => {
   const offset = parseInt(req.query.offset) || 0;
 
   try {
-    const result = await db.query(
-      `SELECT 
-        s.id,
-        s.challenge_id,
-        s.difficulty,
-        s.status,
-        s.tests_passed,
-        s.tests_total,
-        s.execution_time_ms,
-        s.memory_used_kb,
-        s.points_earned,
-        s.submitted_at,
-        s.language_id
-      FROM submissions s
-      WHERE s.user_id = $1
-      ORDER BY s.submitted_at DESC
-      LIMIT $2 OFFSET $3`,
-      [user_id, limit, offset]
-    );
+    const { data: submissions, error } = await supabase
+      .from('submissions')
+      .select(`
+        id,
+        challenge_id,
+        difficulty,
+        status,
+        tests_passed,
+        tests_total,
+        execution_time_ms,
+        memory_used_kb,
+        points_earned,
+        submitted_at,
+        language_id
+      `)
+      .eq('user_id', user_id)
+      .order('submitted_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
 
     return res.json({
       success: true,
-      submissions: result.rows,
-      count: result.rows.length
+      submissions: submissions || [],
+      count: submissions?.length || 0
     });
   } catch (error) {
     console.error('Error fetching submission history:', error);
@@ -243,33 +263,36 @@ router.get('/:id', requireAuth, async (req, res) => {
   const user_id = req.session.userId;
 
   try {
-    const result = await db.query(
-      `SELECT 
-        s.id,
-        s.challenge_id,
-        s.difficulty,
-        s.source_code,
-        s.language_id,
-        s.status,
-        s.tests_passed,
-        s.tests_total,
-        s.execution_time_ms,
-        s.memory_used_kb,
-        s.points_earned,
-        s.error_message,
-        s.submitted_at
-      FROM submissions s
-      WHERE s.id = $1 AND s.user_id = $2`,
-      [submission_id, user_id]
-    );
+    const { data: submission, error } = await supabase
+      .from('submissions')
+      .select(`
+        id,
+        challenge_id,
+        difficulty,
+        source_code,
+        language_id,
+        status,
+        tests_passed,
+        tests_total,
+        execution_time_ms,
+        memory_used_kb,
+        points_earned,
+        error_message,
+        submitted_at
+      `)
+      .eq('id', submission_id)
+      .eq('user_id', user_id)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error) throw error;
+
+    if (!submission) {
       return res.status(404).json({ error: 'Submission not found' });
     }
 
     return res.json({
       success: true,
-      submission: result.rows[0]
+      submission
     });
   } catch (error) {
     console.error('Error fetching submission:', error);
@@ -285,23 +308,47 @@ router.get('/stats/summary', requireAuth, async (req, res) => {
   const user_id = req.session.userId;
 
   try {
-    const result = await db.query(
-      `SELECT 
-        COUNT(*) as total_submissions,
-        COUNT(*) FILTER (WHERE status = 'passed') as successful_submissions,
-        COUNT(DISTINCT challenge_id) FILTER (WHERE status = 'passed') as unique_challenges_solved,
-        SUM(points_earned) as total_points_earned,
-        AVG(execution_time_ms) FILTER (WHERE status = 'passed') as avg_execution_time,
-        MIN(submitted_at) as first_submission,
-        MAX(submitted_at) as last_submission
-      FROM submissions
-      WHERE user_id = $1`,
-      [user_id]
-    );
+    // Get all user submissions
+    const { data: allSubmissions, error: fetchError } = await supabase
+      .from('submissions')
+      .select('status, challenge_id, points_earned, execution_time_ms, submitted_at')
+      .eq('user_id', user_id);
+
+    if (fetchError) throw fetchError;
+
+    // Calculate stats manually
+    const total_submissions = allSubmissions?.length || 0;
+    const successful_submissions = allSubmissions?.filter(s => s.status === 'passed').length || 0;
+    const unique_challenges_solved = new Set(
+      allSubmissions?.filter(s => s.status === 'passed').map(s => s.challenge_id)
+    ).size;
+    const total_points_earned = allSubmissions?.reduce((sum, s) => sum + (s.points_earned || 0), 0) || 0;
+    
+    const passedSubmissions = allSubmissions?.filter(s => s.status === 'passed') || [];
+    const avg_execution_time = passedSubmissions.length > 0
+      ? passedSubmissions.reduce((sum, s) => sum + (s.execution_time_ms || 0), 0) / passedSubmissions.length
+      : null;
+
+    const submittedDates = allSubmissions?.map(s => s.submitted_at).filter(Boolean) || [];
+    // Math.min/max return timestamps (numbers), so we need to convert back to Date objects
+    const first_submission = submittedDates.length > 0 
+      ? new Date(Math.min(...submittedDates.map(d => new Date(d).getTime()))) 
+      : null;
+    const last_submission = submittedDates.length > 0 
+      ? new Date(Math.max(...submittedDates.map(d => new Date(d).getTime()))) 
+      : null;
 
     return res.json({
       success: true,
-      stats: result.rows[0]
+      stats: {
+        total_submissions,
+        successful_submissions,
+        unique_challenges_solved,
+        total_points_earned,
+        avg_execution_time: avg_execution_time ? Math.round(avg_execution_time) : null,
+        first_submission: first_submission ? first_submission.toISOString() : null,
+        last_submission: last_submission ? last_submission.toISOString() : null
+      }
     });
   } catch (error) {
     console.error('Error fetching submission stats:', error);
@@ -310,4 +357,3 @@ router.get('/stats/summary', requireAuth, async (req, res) => {
 });
 
 module.exports = router;
-

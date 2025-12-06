@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const argon2 = require("argon2");
-const db = require('../database');
+const supabase = require('../database'); // Supabase client
 const { 
   authLimiter, 
   registerLimiter, 
@@ -26,22 +26,30 @@ router.post("/register", registerLimiter, validateRegistration, async (req, res)
 
   try {
     // Check if username already exists
-    const existingUser = await db.query(
-      "SELECT id FROM users WHERE username = $1",
-      [username]
-    );
-    if (existingUser.rows.length > 0) {
+    const { data: existingUser, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('username', username)
+      .limit(1);
+    
+    if (userError) throw userError;
+    
+    if (existingUser && existingUser.length > 0) {
       console.log("Registration attempt with existing username");
       return res.status(400).json({ error: "Username already taken" });
     }
 
     // Check if email already exists (if provided)
     if (email) {
-      const existingEmail = await db.query(
-        "SELECT id FROM users WHERE email = $1",
-        [email]
-      );
-      if (existingEmail.rows.length > 0) {
+      const { data: existingEmail, error: emailError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .limit(1);
+      
+      if (emailError) throw emailError;
+      
+      if (existingEmail && existingEmail.length > 0) {
         console.log("Registration attempt with existing email");
         return res.status(400).json({ error: "Email already in use" });
       }
@@ -60,10 +68,20 @@ router.post("/register", registerLimiter, validateRegistration, async (req, res)
   }
 
   try {
-    await db.query(
-      "INSERT INTO users (username, password, email, name, phone) VALUES ($1, $2, $3, $4, $5)",
-      [username, hash, email || null, name || null, phone || null]
-    );
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        username,
+        password: hash,
+        email: email || null,
+        name: name || null,
+        phone: phone || null
+      })
+      .select('id')
+      .single();
+
+    if (error) throw error;
+    
     console.log("✅ New user registered successfully");
   } catch (error) {
     console.error("User registration insert failed:", error);
@@ -86,16 +104,19 @@ router.post("/login", authLimiter, async (req, res) => {
 
   try {
     // Get user from database
-    const result = await db.query(
-      "SELECT id, username, password FROM users WHERE username = $1",
-      [username]
-    );
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, username, password')
+      .eq('username', username)
+      .limit(1);
+
+    if (error) throw error;
 
     let isValidLogin = false;
     let user = null;
 
-    if (result.rows.length > 0) {
-      user = result.rows[0];
+    if (users && users.length > 0) {
+      user = users[0];
       
       // Verify password
       const verifyResult = await argon2.verify(user.password, password);
@@ -105,7 +126,6 @@ router.post("/login", authLimiter, async (req, res) => {
       }
     } else {
       // Timing attack protection: Run password verification even if user doesn't exist
-      // This ensures similar response time whether user exists or not
       await argon2.hash(password);
     }
 
@@ -198,16 +218,17 @@ router.get("/profile", async (req, res) => {
   }
 
   try {
-    const result = await db.query(
-      "SELECT id, username, email, name, phone, created_at FROM users WHERE id = $1",
-      [req.session.userId]
-    );
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, username, email, name, phone, created_at')
+      .eq('id', req.session.userId)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error) throw error;
+
+    if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-
-    const user = result.rows[0];
     
     return res.json({
       success: true,
@@ -245,44 +266,58 @@ router.put("/profile", profileUpdateLimiter, validateProfileUpdate, async (req, 
   try {
     // Check if username is being changed and if it's already taken
     if (username && username !== req.session.username) {
-      const existingUser = await db.query(
-        "SELECT id FROM users WHERE username = $1 AND id != $2",
-        [username, userId]
-      );
-      if (existingUser.rows.length > 0) {
+      const { data: existingUser, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', username)
+        .neq('id', userId)
+        .limit(1);
+      
+      if (userError) throw userError;
+      
+      if (existingUser && existingUser.length > 0) {
         return res.status(400).json({ error: "Username already taken" });
       }
     }
 
     // Check if email is being changed and if it's already taken
     if (email) {
-      const existingEmail = await db.query(
-        "SELECT id FROM users WHERE email = $1 AND id != $2",
-        [email, userId]
-      );
-      if (existingEmail.rows.length > 0) {
+      const { data: existingEmail, error: emailError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .neq('id', userId)
+        .limit(1);
+      
+      if (emailError) throw emailError;
+      
+      if (existingEmail && existingEmail.length > 0) {
         return res.status(400).json({ error: "Email already in use" });
       }
     }
 
-    // Update the user profile
-    const result = await db.query(
-      `UPDATE users 
-       SET username = COALESCE($1, username),
-           email = COALESCE($2, email),
-           name = COALESCE($3, name),
-           phone = COALESCE($4, phone),
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $5
-       RETURNING id, username, email, name, phone`,
-      [username || null, email || null, name || null, phone || null, userId]
-    );
+    // Build update object (only include fields that are provided)
+    const updateData = {
+      updated_at: new Date().toISOString()
+    };
+    if (username) updateData.username = username;
+    if (email !== undefined) updateData.email = email;
+    if (name !== undefined) updateData.name = name;
+    if (phone !== undefined) updateData.phone = phone;
 
-    if (result.rows.length === 0) {
+    // Update the user profile
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', userId)
+      .select('id, username, email, name, phone')
+      .single();
+
+    if (updateError) throw updateError;
+
+    if (!updatedUser) {
       return res.status(404).json({ error: "User not found" });
     }
-
-    const updatedUser = result.rows[0];
 
     // Update session if username changed
     if (username) {
@@ -339,19 +374,20 @@ router.put("/password", passwordChangeLimiter, async (req, res) => {
 
   try {
     // Get current password hash
-    const result = await db.query(
-      "SELECT password FROM users WHERE id = $1",
-      [req.session.userId]
-    );
+    const { data: userData, error: fetchError } = await supabase
+      .from('users')
+      .select('password')
+      .eq('id', req.session.userId)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (fetchError) throw fetchError;
+
+    if (!userData) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const user = result.rows[0];
-
     // Verify current password
-    const isValid = await argon2.verify(user.password, currentPassword);
+    const isValid = await argon2.verify(userData.password, currentPassword);
     if (!isValid) {
       return res.status(401).json({ error: "Current password is incorrect" });
     }
@@ -360,10 +396,15 @@ router.put("/password", passwordChangeLimiter, async (req, res) => {
     const newHash = await argon2.hash(newPassword);
 
     // Update password
-    await db.query(
-      "UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-      [newHash, req.session.userId]
-    );
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        password: newHash,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', req.session.userId);
+
+    if (updateError) throw updateError;
 
     console.log("✅ User password updated successfully");
 

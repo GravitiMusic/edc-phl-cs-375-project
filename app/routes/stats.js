@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database');
+const supabase = require('../database');
 const { requireAuth } = require('../middleware/auth');
 
 /**
@@ -11,8 +11,9 @@ router.get("/me", requireAuth, async (req, res) => {
   const user_id = req.session.userId;
 
   try {
-    const result = await db.query(
-      `SELECT 
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select(`
         id,
         username,
         total_points,
@@ -23,30 +24,45 @@ router.get("/me", requireAuth, async (req, res) => {
         day_streak,
         created_at,
         last_login
-      FROM users 
-      WHERE id = $1`,
-      [user_id]
-    );
+      `)
+      .eq('id', user_id)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (userError) throw userError;
+
+    if (!userData) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get user's rank
-    const rankResult = await db.query(
-      `SELECT rank FROM (
-        SELECT 
-          id,
-          ROW_NUMBER() OVER (ORDER BY total_points DESC, challenges_completed DESC, username ASC) as rank
-        FROM users
-      ) ranked
-      WHERE id = $1`,
-      [user_id]
-    );
+    // Get user's rank using RPC or manual calculation
+    // Note: Supabase doesn't support window functions directly in client
+    // We'll need to calculate rank manually or use a database function
+    const { data: allUsers, error: rankError } = await supabase
+      .from('users')
+      .select('id, total_points, challenges_completed, username')
+      .order('total_points', { ascending: false })
+      .order('challenges_completed', { ascending: false })
+      .order('username', { ascending: true });
+
+    if (rankError) throw rankError;
+
+    // Calculate rank manually
+    let rank = 1;
+    for (const user of allUsers || []) {
+      if (user.id === user_id) break;
+      if (user.total_points > userData.total_points || 
+          (user.total_points === userData.total_points && 
+           user.challenges_completed > userData.challenges_completed) ||
+          (user.total_points === userData.total_points && 
+           user.challenges_completed === userData.challenges_completed &&
+           user.username < userData.username)) {
+        rank++;
+      }
+    }
 
     const userStats = {
-      ...result.rows[0],
-      rank: rankResult.rows[0]?.rank || 0
+      ...userData,
+      rank
     };
 
     return res.json({
@@ -60,15 +76,12 @@ router.get("/me", requireAuth, async (req, res) => {
 });
 
 router.get("/allStats", async (req, res) => {
-    console.log("Fetching all stats for leaderboard");
-    //TODO: Potentially use lastActive (last time solved a problem) instead of lastLogin
-    try {
-     // Calculate rank dynamically based on total_points (primary), challenges_completed (tiebreaker)
-     const result = await db.query(`
-      SELECT 
-        ROW_NUMBER() OVER (
-          ORDER BY total_points DESC, challenges_completed DESC, username ASC
-        ) as rank,
+  console.log("Fetching all stats for leaderboard");
+  try {
+    // Get all users ordered by points, challenges, username
+    const { data: users, error } = await supabase
+      .from('users')
+      .select(`
         username, 
         last_login, 
         total_points,
@@ -77,14 +90,24 @@ router.get("/allStats", async (req, res) => {
         hard_completed,
         challenges_completed, 
         day_streak
-      FROM users
-      ORDER BY total_points DESC, challenges_completed DESC, username ASC
-    `);
-    res.json(result.rows)
-    } catch (error) {
-        console.error("Error fetching stats from SQL:", error);
-        res.status(500).json({error: "Failed to fetch stats, please try again later."});
-    }
-})
+      `)
+      .order('total_points', { ascending: false })
+      .order('challenges_completed', { ascending: false })
+      .order('username', { ascending: true });
+
+    if (error) throw error;
+
+    // Add rank to each user
+    const usersWithRank = (users || []).map((user, index) => ({
+      rank: index + 1,
+      ...user
+    }));
+
+    res.json(usersWithRank);
+  } catch (error) {
+    console.error("Error fetching stats from Supabase:", error);
+    res.status(500).json({ error: "Failed to fetch stats, please try again later." });
+  }
+});
 
 module.exports = router;

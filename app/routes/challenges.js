@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database');
+const supabase = require('../database');
 
 // Retrieve a list of active challenges with completion status for each difficulty
 router.get('/', async (req, res) => {
@@ -8,22 +8,28 @@ router.get('/', async (req, res) => {
     const userId = req.session?.userId;
     
     // Get all active challenges
-    const challengesResult = await db.query(
-      "SELECT id, title, description, created_at FROM challenges WHERE is_active = true ORDER BY created_at ASC"
-    );
+    const { data: challenges, error: challengesError } = await supabase
+      .from('challenges')
+      .select('id, title, description, created_at')
+      .eq('is_active', true)
+      .order('created_at', { ascending: true });
+
+    if (challengesError) throw challengesError;
 
     // If user is logged in, get their completion status for each difficulty
     let completions = [];
     if (userId) {
-      const completionsResult = await db.query(
-        "SELECT challenge_id, difficulty FROM user_completions WHERE user_id = $1",
-        [userId]
-      );
-      completions = completionsResult.rows;
+      const { data: userCompletions, error: completionsError } = await supabase
+        .from('user_completions')
+        .select('challenge_id, difficulty')
+        .eq('user_id', userId);
+
+      if (completionsError) throw completionsError;
+      completions = userCompletions || [];
     }
 
     // Add completion status to each challenge
-    const challengesWithStatus = challengesResult.rows.map(challenge => {
+    const challengesWithStatus = (challenges || []).map(challenge => {
       const easyCompleted = completions.some(c => c.challenge_id === challenge.id && c.difficulty === 'easy');
       const mediumCompleted = completions.some(c => c.challenge_id === challenge.id && c.difficulty === 'medium');
       const hardCompleted = completions.some(c => c.challenge_id === challenge.id && c.difficulty === 'hard');
@@ -58,40 +64,45 @@ router.get('/:id', async (req, res) => {
     const userId = req.session?.userId;
 
     // Get challenge details
-    const challengeResult = await db.query(
-      `SELECT 
+    const { data: challengeData, error: challengeError } = await supabase
+      .from('challenges')
+      .select(`
         id, title, description,
         easy_instructions, easy_starter_code, easy_hint,
         medium_instructions, medium_starter_code, medium_hint,
         hard_instructions, hard_starter_code, hard_hint,
         test_cases, time_limit_ms, memory_limit_mb
-      FROM challenges 
-      WHERE id = $1 AND is_active = true`,
-      [challengeId]
-    );
+      `)
+      .eq('id', challengeId)
+      .eq('is_active', true)
+      .single();
 
-    if (challengeResult.rows.length === 0) {
+    if (challengeError) throw challengeError;
+
+    if (!challengeData) {
       return res.status(404).json({ error: 'Challenge not found' });
     }
-
-    const challenge = challengeResult.rows[0];
 
     // Get user's completion status if logged in
     let completions = { easy: false, medium: false, hard: false };
     if (userId) {
-      const completionsResult = await db.query(
-        "SELECT difficulty FROM user_completions WHERE user_id = $1 AND challenge_id = $2",
-        [userId, challengeId]
-      );
-      completionsResult.rows.forEach(row => {
-        completions[row.difficulty] = true;
-      });
+      const { data: userCompletions, error: completionsError } = await supabase
+        .from('user_completions')
+        .select('difficulty')
+        .eq('user_id', userId)
+        .eq('challenge_id', challengeId);
+
+      if (!completionsError && userCompletions) {
+        userCompletions.forEach(row => {
+          completions[row.difficulty] = true;
+        });
+      }
     }
 
     return res.json({
       success: true,
       challenge: {
-        ...challenge,
+        ...challengeData,
         completions
       }
     });
