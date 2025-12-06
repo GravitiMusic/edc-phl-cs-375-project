@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: edc-phl-cs-375-project
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Supabase Configuration
+      - key: SUPABASE_URL
+        sync: false  # Set manually: https://zoaosfjclyjahltdwcuz.supabase.co
+      - key: SUPABASE_KEY
+        sync: false  # Set manually: Get from Supabase Dashboard → Project Settings → API → anon key
+      # Database URL for sessions (PostgreSQL connection)
+      # Get this from: Supabase Dashboard → Project Settings → Database → Connection String
+      # Use the "Connection pooling" URL (port 6543) - recommended
+      - key: DATABASE_URL
+        sync: false  # Set this manually in Render dashboard with your Supabase PostgreSQL URL
+      - key: SESSION_SECRET
+        generateValue: true
+      # Add other environment variables as needed
+      # - key: JUDGE_API_URL
+      #   sync: false
+      # - key: JUDGE_API_KEY
+      #   sync: false
+      # - key: JUDGE_API_HOST
+      #   sync: false
+
+# No database section needed - using Supabase instead
+
