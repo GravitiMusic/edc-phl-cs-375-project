@@ -68,35 +68,21 @@
       </div>
     </section>
 
-    <!-- Stats Section -->
-    <section class="stats-section">
-      <div class="container">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon">🎯</div>
-            <div class="stat-value" id="challengesCompleted">0</div>
-            <div class="stat-label">Challenges Completed</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">🔥</div>
-            <div class="stat-value" id="currentStreak">0</div>
-            <div class="stat-label">Day Streak</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">⭐</div>
-            <div class="stat-value" id="totalPoints">0</div>
-            <div class="stat-label">Total Points</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">🏆</div>
-            <div class="stat-value" id="userRank">#N/A</div>
-            <div class="stat-label">Global Rank</div>
-          </div>
+        <!-- Progress Section -->
+    <section class="progress-section">
+      <h2>Your Progress</h2>
+      <div class="progress-bar-container">
+        <div class="progress-bar-label">
+          <span>Next Milestone</span>
+          <span id="progressText">0 / 100 points</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
         </div>
       </div>
     </section>
 
-    <!-- Daily Challenge Section -->
+        <!-- Daily Challenge Section -->
     <section class="daily-challenge-section">
       <div class="container-wide">
         <div class="section-header">
@@ -164,6 +150,36 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].</pre>
         </div>
       </div>
     </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-value" id="challengesCompleted">0</div>
+            <div class="stat-label">Challenges Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-value" id="currentStreak">0</div>
+            <div class="stat-label">Day Streak</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-value" id="totalPoints">0</div>
+            <div class="stat-label">Total Points</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-value" id="userRank">#N/A</div>
+            <div class="stat-label">Global Rank</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
 
     <!-- Features Section -->
     <section class="features-section">

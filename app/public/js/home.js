@@ -308,6 +308,61 @@ async function logout() {
   }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  loadStatistics();
+});
+
+/**
+ * Load all statistics
+ */
+async function loadStatistics() {
+  try {
+    // Fetch both user stats and submission summary in parallel
+    const [userResponse] = await Promise.all([
+      fetch('/stats/me')
+    ]);
+
+    if (!userResponse.ok) {
+      throw new Error('Failed to fetch statistics');
+    }
+
+    const userData = await userResponse.json();
+ 
+
+    if (userData.success) {
+      displayStatistics(userData.stats);
+      
+      // Hide loading, show content
+      // document.getElementById('loading').style.display = 'none';
+      // document.getElementById('content').style.display = 'block';
+    } else {
+      throw new Error('Invalid response format');
+    }
+  } catch (error) {
+    console.error('Error loading statistics:', error);
+    document.getElementById('loading').innerHTML = `
+      <div class="error-message">
+        <p>❌ Failed to load statistics</p>
+        <button onclick="location.reload()" class="btn-retry">Retry</button>
+      </div>
+    `;
+  }
+}
+
+function displayStatistics(userStats) {
+  // Progress Bar (milestones at 100, 250, 500, 1000, etc.)
+  const points = userStats.total_points || 0;
+  const milestones = [100, 250, 500, 1000, 2500, 5000, 10000];
+  let nextMilestone = milestones.find(m => m > points) || (Math.ceil(points / 10000) + 1) * 10000;
+  let prevMilestone = milestones.filter(m => m <= points).pop() || 0;
+  console.log(points);
+  
+  const progress = ((points - prevMilestone) / (nextMilestone - prevMilestone)) * 100;
+  
+  document.getElementById('progressText').textContent = `${points} / ${nextMilestone} points`;
+  document.getElementById('progressBar').style.width = `${Math.min(progress, 100)}%`;
+}
+
 // Make logout function globally available
 window.logout = logout;
 

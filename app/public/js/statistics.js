@@ -115,15 +115,15 @@ function displayStatistics(userStats, submissionStats) {
   }
 
   // Progress Bar (milestones at 100, 250, 500, 1000, etc.)
-  const points = userStats.total_points || 0;
-  const milestones = [100, 250, 500, 1000, 2500, 5000, 10000];
-  let nextMilestone = milestones.find(m => m > points) || (Math.ceil(points / 10000) + 1) * 10000;
-  let prevMilestone = milestones.filter(m => m <= points).pop() || 0;
+  // const points = userStats.total_points || 0;
+  // const milestones = [100, 250, 500, 1000, 2500, 5000, 10000];
+  // let nextMilestone = milestones.find(m => m > points) || (Math.ceil(points / 10000) + 1) * 10000;
+  // let prevMilestone = milestones.filter(m => m <= points).pop() || 0;
   
-  const progress = ((points - prevMilestone) / (nextMilestone - prevMilestone)) * 100;
+  // const progress = ((points - prevMilestone) / (nextMilestone - prevMilestone)) * 100;
   
-  document.getElementById('progressText').textContent = `${points} / ${nextMilestone} points`;
-  document.getElementById('progressBar').style.width = `${Math.min(progress, 100)}%`;
+  // document.getElementById('progressText').textContent = `${points} / ${nextMilestone} points`;
+  // document.getElementById('progressBar').style.width = `${Math.min(progress, 100)}%`;
 
   // Add color to rank card based on rank
   const rankCard = document.querySelector('.rank-card');
