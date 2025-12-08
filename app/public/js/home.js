@@ -25,6 +25,54 @@ const languageConfigs = {
 };
 
 /**
+ * Get localStorage key for current challenge code
+ */
+function getCodeStorageKey() {
+  if (!currentDailyChallenge) return null;
+  return `oneup_code_${currentDailyChallenge.challenge.id}_${currentDifficulty}_${currentLanguageId}`;
+}
+
+/**
+ * Save code to localStorage
+ */
+function saveCodeToStorage() {
+  if (!editor || !currentDailyChallenge) return;
+  
+  const code = editor.state.doc.toString();
+  const key = getCodeStorageKey();
+  
+  if (key) {
+    try {
+      localStorage.setItem(key, code);
+      console.log('💾 Code auto-saved to localStorage');
+    } catch (error) {
+      console.warn('Failed to save code to localStorage:', error);
+    }
+  }
+}
+
+/**
+ * Load code from localStorage
+ */
+function loadCodeFromStorage() {
+  const key = getCodeStorageKey();
+  
+  if (key) {
+    try {
+      const savedCode = localStorage.getItem(key);
+      if (savedCode) {
+        console.log('📂 Loaded saved code from localStorage');
+        return savedCode;
+      }
+    } catch (error) {
+      console.warn('Failed to load code from localStorage:', error);
+    }
+  }
+  
+  return null;
+}
+
+/**
  * Initialize the CodeMirror editor
  */
 function initializeEditor(starterCode = '', languageId = 71) {
@@ -36,21 +84,42 @@ function initializeEditor(starterCode = '', languageId = 71) {
     editor.destroy();
   }
   
+  // Check for saved code first, fallback to starter code
+  const savedCode = loadCodeFromStorage();
+  const codeToUse = savedCode || starterCode || '// Loading...';
+  
   editor = new EditorView({
     state: EditorState.create({
-      doc: starterCode || '// Loading...',
-      extensions: [basicSetup, config.extension],
+      doc: codeToUse,
+      extensions: [
+        basicSetup, 
+        config.extension,
+        EditorView.updateListener.of((update) => {
+          // Auto-save code when content changes
+          if (update.docChanged) {
+            // Debounce saves to avoid excessive localStorage writes
+            clearTimeout(window.autoSaveTimeout);
+            window.autoSaveTimeout = setTimeout(saveCodeToStorage, 1000);
+          }
+        })
+      ],
     }),
     parent: editorContainer,
   });
 
   console.log('✅ Code editor initialized with', config.name);
+  if (savedCode) {
+    console.log('✨ Restored your previous code');
+  }
 }
 
 /**
  * Change programming language
  */
 function changeLanguage(languageId) {
+  // Save current code before switching
+  saveCodeToStorage();
+  
   currentLanguageId = parseInt(languageId);
   const config = languageConfigs[currentLanguageId];
   
@@ -66,7 +135,7 @@ function changeLanguage(languageId) {
     starterCode = getStarterCodeForLanguage(difficultyData.starterCode, currentLanguageId);
   }
 
-  // Reinitialize editor with new language and starter code
+  // Reinitialize editor with new language (will load saved code if available)
   initializeEditor(starterCode, currentLanguageId);
 
   console.log(`✅ Switched to ${config.name}`);
