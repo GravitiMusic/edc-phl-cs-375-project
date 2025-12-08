@@ -75,8 +75,14 @@ section {
 }
 
 #challenges-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#challenges-table thead tr {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
 }
 
 #challenges-table th {
@@ -84,7 +90,9 @@ section {
   text-align: left;
   font-weight: 600;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid #667eea;
+  color: white;
+  background: transparent;
+  border: none;
 }
 
 #challenges-table td {

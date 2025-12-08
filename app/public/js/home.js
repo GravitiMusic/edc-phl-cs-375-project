@@ -129,6 +129,79 @@ async function runCode() {
 }
 
 /**
+ * Generate Python test harness (wraps user code with tests)
+ */
+function generatePythonTestHarness(userCode, testCases) {
+  // Parse test cases from database
+  let tests = [];
+  if (testCases) {
+    tests = typeof testCases === 'string' ? JSON.parse(testCases) : testCases;
+  }
+  
+  // If no test cases, return user code as-is
+  if (!tests || tests.length === 0) {
+    console.warn('⚠️ No test cases found for this challenge');
+    return userCode;
+  }
+  
+  console.log(`✅ Generating test harness with ${tests.length} tests`);
+  
+  // Generate test code
+  let testCode = `${userCode}\n\n`;
+  testCode += `# Test Harness (Auto-generated)\n`;
+  testCode += `tests_passed = 0\n`;
+  testCode += `tests_failed = 0\n`;
+  testCode += `test_results = []\n\n`;
+  
+  testCode += `def run_test(test_num, input_str, expected_str):\n`;
+  testCode += `    global tests_passed, tests_failed, test_results\n`;
+  testCode += `    try:\n`;
+  testCode += `        # Parse input and expected\n`;
+  testCode += `        actual = eval(f"solution{input_str}")\n`;
+  testCode += `        expected = eval(expected_str)\n`;
+  testCode += `        \n`;
+  testCode += `        if actual == expected:\n`;
+  testCode += `            tests_passed += 1\n`;
+  testCode += `            test_results.append(f"✓ Test {test_num}: PASS")\n`;
+  testCode += `            test_results.append(f"  Input: {input_str}")\n`;
+  testCode += `            test_results.append(f"  Expected: {expected}")\n`;
+  testCode += `            test_results.append(f"  Got: {actual}")\n`;
+  testCode += `        else:\n`;
+  testCode += `            tests_failed += 1\n`;
+  testCode += `            test_results.append(f"✗ Test {test_num}: FAIL")\n`;
+  testCode += `            test_results.append(f"  Input: {input_str}")\n`;
+  testCode += `            test_results.append(f"  Expected: {expected}")\n`;
+  testCode += `            test_results.append(f"  Got: {actual}")\n`;
+  testCode += `    except Exception as e:\n`;
+  testCode += `        tests_failed += 1\n`;
+  testCode += `        test_results.append(f"✗ Test {test_num}: ERROR")\n`;
+  testCode += `        test_results.append(f"  Input: {input_str}")\n`;
+  testCode += `        test_results.append(f"  Error: {str(e)}")\n`;
+  testCode += `    test_results.append("")  # blank line\n\n`;
+  
+  // Add each test case
+  tests.forEach((test, index) => {
+    const testNum = index + 1;
+    const input = test.input.replace(/"/g, '\\"');
+    const expected = test.expected.replace(/"/g, '\\"');
+    testCode += `run_test(${testNum}, "${input}", "${expected}")\n`;
+  });
+  
+  // Print results
+  testCode += `\n# Print all test results\n`;
+  testCode += `for result in test_results:\n`;
+  testCode += `    print(result)\n`;
+  testCode += `\n`;
+  testCode += `# Print summary (must be last line for backend parsing)\n`;
+  testCode += `total_tests = tests_passed + tests_failed\n`;
+  testCode += `print(f"\\n{'='*50}")\n`;
+  testCode += `print(f"{'='*50}")\n`;
+  testCode += `print(f"{tests_passed}/{total_tests} tests passed")\n`;
+  
+  return testCode;
+}
+
+/**
  * Submit the solution
  */
 async function submitSolution() {
@@ -152,6 +225,12 @@ async function submitSolution() {
   outputEl.textContent = "⏳ Submitting your solution...";
 
   try {
+    // Generate test harness with user code (only for Python for now)
+    let codeToSubmit = code;
+    if (currentLanguageId === 71 && currentDailyChallenge.challenge.testCases) {
+      codeToSubmit = generatePythonTestHarness(code, currentDailyChallenge.challenge.testCases);
+    }
+    
     const response = await fetch('/submissions', {
       method: 'POST',
       headers: {
@@ -159,7 +238,7 @@ async function submitSolution() {
       },
       body: JSON.stringify({
         challenge_id: currentDailyChallenge.challenge.id,
-        source_code: code,
+        source_code: codeToSubmit,
         language_id: currentLanguageId,
         difficulty: currentDifficulty
       })

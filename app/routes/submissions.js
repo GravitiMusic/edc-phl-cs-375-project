@@ -113,8 +113,31 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
     const today = getUserToday('UTC'); // Using UTC for now
     const isDailyChallenge = await isTodaysDaily(challenge_id, today);
     
-    // Award bonus points if completing today's daily challenge for the first time
-    const bonusPoints = (isDailyChallenge && isFirstCompletion) ? 50 : 0;
+    // Award bonus points only if:
+    // 1. It's today's daily challenge
+    // 2. User is passing this submission
+    // 3. User hasn't already received bonus for this challenge today (any difficulty)
+    let bonusPoints = 0;
+    if (isDailyChallenge && status === 'passed') {
+      // Check if user already got daily bonus for this challenge today (any difficulty)
+      const { data: existingDailyCompletion, error: dailyError } = await supabase
+        .from('submissions')
+        .select('id')
+        .eq('user_id', user_id)
+        .eq('challenge_id', challenge_id)
+        .eq('completed_on_daily_date', today)
+        .gt('bonus_points', 0)
+        .limit(1);
+      
+      if (dailyError) throw dailyError;
+      
+      // Only award bonus if they haven't received it for this challenge today
+      // This ensures bonus is only given ONCE per challenge per day, regardless of difficulty
+      if (!existingDailyCompletion || existingDailyCompletion.length === 0) {
+        bonusPoints = 50;
+      }
+    }
+    
     const points_earned = basePoints + bonusPoints;
 
     // Save submission to database
@@ -133,7 +156,7 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
         memory_used_kb: result.memory ? parseInt(result.memory) : null,
         points_earned,
         bonus_points: bonusPoints,
-        completed_on_daily_date: (isDailyChallenge && isFirstCompletion) ? today : null,
+        completed_on_daily_date: (isDailyChallenge && bonusPoints > 0) ? today : null,
         error_message: result.compile_output || result.stderr || null,
         submitted_at: new Date().toISOString()
       })
@@ -142,9 +165,10 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
 
     if (submissionError) throw submissionError;
 
-    // Update streak if completed daily challenge
+    // Update streak if completed daily challenge and earned bonus
+    // Only update streak once per day (when bonus is awarded)
     let streakInfo = null;
-    if (isDailyChallenge && isFirstCompletion) {
+    if (isDailyChallenge && bonusPoints > 0) {
       try {
         streakInfo = await updateStreak(user_id, today);
         console.log(`🔥 Streak updated: ${streakInfo.streak} days (${streakInfo.streakAction})`);

@@ -87,12 +87,15 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = '/pages/home.html';
     });
     
-    // Add hover effect
+    // Add hover effects
     startBtn.addEventListener('mouseenter', () => {
       startBtn.style.transform = 'translateY(-2px)';
+      startBtn.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
     });
+    
     startBtn.addEventListener('mouseleave', () => {
       startBtn.style.transform = 'translateY(0)';
+      startBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
     });
   }
 
