@@ -99,11 +99,18 @@ function applyFilters() {
     const challengeFilter = document.getElementById('filter-challenge').value;
     const difficultyFilter = document.getElementById('filter-difficulty').value;
     const statusFilter = document.getElementById('filter-status').value;
+    const dailyFilter = document.getElementById('filter-daily').value;
 
     filteredSubmissions = allSubmissions.filter(submission => {
         if (challengeFilter !== 'all' && submission.challenge_id != challengeFilter) return false;
         if (difficultyFilter !== 'all' && submission.difficulty !== difficultyFilter) return false;
         if (statusFilter !== 'all' && submission.status !== statusFilter) return false;
+        
+        // Daily challenge filter
+        const isDailyChallenge = submission.completed_on_daily_date !== null && submission.completed_on_daily_date !== undefined;
+        if (dailyFilter === 'daily' && !isDailyChallenge) return false;
+        if (dailyFilter === 'regular' && isDailyChallenge) return false;
+        
         return true;
     });
 
@@ -116,7 +123,7 @@ function renderSubmissions() {
     tbody.innerHTML = '';
 
     if (filteredSubmissions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No submissions match your filters.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">No submissions match your filters.</td></tr>';
         return;
     }
 
@@ -127,13 +134,35 @@ function renderSubmissions() {
         const statusClass = getStatusClass(submission.status);
         const difficultyClass = getDifficultyClass(submission.difficulty);
         
+        // Check if this was a daily challenge submission
+        const isDailyChallenge = submission.completed_on_daily_date !== null && submission.completed_on_daily_date !== undefined;
+        const bonusPoints = submission.bonus_points || 0;
+        
+        // Highlight daily challenge rows
+        if (isDailyChallenge) {
+            row.style.backgroundColor = '#fef3c7'; // Light yellow
+            row.style.borderLeft = '3px solid #f59e0b'; // Orange border
+        }
+        
+        // Build challenge title with daily badge
+        let titleHTML = challenge ? challenge.title : 'Unknown';
+        if (isDailyChallenge) {
+            titleHTML = `<span style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: bold; margin-right: 6px;">⭐ DAILY</span>${titleHTML}`;
+        }
+        
+        // Show points with bonus indicator
+        let pointsHTML = `${submission.points_earned || 0}`;
+        if (bonusPoints > 0) {
+            pointsHTML += ` <span style="color: #10b981; font-weight: 600;" title="Includes +${bonusPoints} bonus points">💰</span>`;
+        }
+        
         row.innerHTML = `
-            <td>${challenge ? challenge.title : 'Unknown'}</td>
+            <td>${titleHTML}</td>
             <td><span class="badge ${difficultyClass}">${capitalizeFirst(submission.difficulty)}</span></td>
             <td><span class="badge ${statusClass}">${capitalizeFirst(submission.status)}</span></td>
-            <td>${submission.tests_passed || 0}/${submission.total_tests || 0}</td>
-            <td>${submission.points_awarded || 0}</td>
-            <td>${submission.execution_time ? submission.execution_time + 'ms' : '-'}</td>
+            <td>${submission.tests_passed || 0}/${submission.tests_total || 0}</td>
+            <td>${pointsHTML}</td>
+            <td>${submission.execution_time_ms ? submission.execution_time_ms + 'ms' : '-'}</td>
             <td>${formatDate(submission.submitted_at)}</td>
             <td><button class="btn-view" data-id="${submission.id}">View</button></td>
         `;
@@ -234,12 +263,14 @@ function setupEventListeners() {
     document.getElementById('filter-challenge').addEventListener('change', applyFilters);
     document.getElementById('filter-difficulty').addEventListener('change', applyFilters);
     document.getElementById('filter-status').addEventListener('change', applyFilters);
+    document.getElementById('filter-daily').addEventListener('change', applyFilters);
     
     // Reset filters
     document.getElementById('reset-filters').addEventListener('click', () => {
         document.getElementById('filter-challenge').value = 'all';
         document.getElementById('filter-difficulty').value = 'all';
         document.getElementById('filter-status').value = 'all';
+        document.getElementById('filter-daily').value = 'all';
         applyFilters();
     });
 

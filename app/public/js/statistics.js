@@ -12,10 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 async function loadStatistics() {
   try {
-    // Fetch both user stats and submission summary in parallel
-    const [userResponse, submissionResponse] = await Promise.all([
+    // Fetch all stats in parallel
+    const [userResponse, submissionResponse, dailyChallengeResponse] = await Promise.all([
       fetch('/stats/me'),
-      fetch('/submissions/stats/summary')
+      fetch('/submissions/stats/summary'),
+      fetch('/api/daily-challenge/stats')
     ]);
 
     if (!userResponse.ok || !submissionResponse.ok) {
@@ -24,9 +25,10 @@ async function loadStatistics() {
 
     const userData = await userResponse.json();
     const submissionData = await submissionResponse.json();
+    const dailyChallengeData = dailyChallengeResponse.ok ? await dailyChallengeResponse.json() : null;
 
     if (userData.success && submissionData.success) {
-      displayStatistics(userData.stats, submissionData.stats);
+      displayStatistics(userData.stats, submissionData.stats, dailyChallengeData?.stats);
       
       // Hide loading, show content
       document.getElementById('loading').style.display = 'none';
@@ -48,12 +50,40 @@ async function loadStatistics() {
 /**
  * Display statistics on the page
  */
-function displayStatistics(userStats, submissionStats) {
+function displayStatistics(userStats, submissionStats, dailyChallengeStats) {
   // Overview Cards
   document.getElementById('userRank').textContent = userStats.rank ? `#${userStats.rank}` : 'Unranked';
   document.getElementById('totalPoints').textContent = userStats.total_points || 0;
   document.getElementById('challengesCompleted').textContent = userStats.challenges_completed || 0;
   document.getElementById('dayStreak').textContent = userStats.day_streak || 0;
+
+  // Daily Challenge Stats
+  if (dailyChallengeStats) {
+    document.getElementById('currentStreakDetail').textContent = dailyChallengeStats.currentStreak || 0;
+    document.getElementById('longestStreak').textContent = dailyChallengeStats.longestStreak || 0;
+    document.getElementById('dailyChallengesCompleted').textContent = dailyChallengeStats.totalDailyChallengesCompleted || 0;
+    document.getElementById('totalBonusPoints').textContent = dailyChallengeStats.totalBonusPointsEarned || 0;
+    
+    // Highlight longest streak if it's impressive
+    const longestStreakEl = document.getElementById('longestStreak');
+    const longestStreak = dailyChallengeStats.longestStreak || 0;
+    if (longestStreak >= 30) {
+      longestStreakEl.style.color = '#ef4444'; // Red for 30+ day streak
+      longestStreakEl.title = 'Amazing dedication! 🔥';
+    } else if (longestStreak >= 14) {
+      longestStreakEl.style.color = '#f59e0b'; // Orange for 14+ day streak
+      longestStreakEl.title = 'Great streak! 🎉';
+    } else if (longestStreak >= 7) {
+      longestStreakEl.style.color = '#10b981'; // Green for 7+ day streak
+      longestStreakEl.title = 'Nice work! 💪';
+    }
+  } else {
+    // Fallback if daily challenge stats not available
+    document.getElementById('currentStreakDetail').textContent = userStats.day_streak || 0;
+    document.getElementById('longestStreak').textContent = userStats.longest_streak || 0;
+    document.getElementById('dailyChallengesCompleted').textContent = 0;
+    document.getElementById('totalBonusPoints').textContent = 0;
+  }
 
   // Difficulty Breakdown
   document.getElementById('easyCompleted').textContent = userStats.easy_completed || 0;

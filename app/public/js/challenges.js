@@ -6,17 +6,30 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!tbody) return;
 
   let allChallenges = [];
+  let dailyChallengeData = null; // Store today's daily challenge
 
-  // Fetch challenges on page load
-  fetch('/challenges')
-    .then((res) => res.json())
-    .then((data) => {
-      if (!data || !data.success) {
+  // Fetch today's daily challenge and all challenges
+  Promise.all([
+    fetch('/api/daily-challenge').then(res => res.json()).catch(() => null),
+    fetch('/challenges').then(res => res.json())
+  ])
+    .then(([dailyData, challengesData]) => {
+      // Store daily challenge data
+      if (dailyData && dailyData.success) {
+        dailyChallengeData = dailyData;
+        console.log('✅ Daily challenge loaded:', dailyData.challenge.title);
+        
+        // Show and populate the daily challenge banner
+        showDailyChallengeBanner(dailyData);
+      }
+
+      // Handle challenges data
+      if (!challengesData || !challengesData.success) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">Failed to load challenges.</td></tr>';
         return;
       }
 
-      allChallenges = data.challenges || [];
+      allChallenges = challengesData.challenges || [];
 
       if (allChallenges.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No challenges available.</td></tr>';
@@ -42,6 +55,46 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Fetch challenges error:', err);
       tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #ef4444;">Error loading challenges.</td></tr>';
     });
+
+  /**
+   * Show and populate the daily challenge banner
+   */
+  function showDailyChallengeBanner(data) {
+    const banner = document.getElementById('daily-challenge-banner');
+    const titleEl = document.getElementById('daily-challenge-title');
+    const bonusEl = document.getElementById('daily-challenge-bonus');
+    const startBtn = document.getElementById('start-daily-challenge-btn');
+    
+    if (!banner || !titleEl || !bonusEl || !startBtn) return;
+    
+    // Populate banner
+    titleEl.textContent = data.challenge.title;
+    
+    if (data.bonus.available) {
+      bonusEl.textContent = `💰 ${data.bonus.message}`;
+      bonusEl.style.color = '#10b981';
+      bonusEl.style.fontWeight = '600';
+    } else {
+      bonusEl.textContent = '✓ Already completed';
+      bonusEl.style.color = '#6b7280';
+    }
+    
+    // Show banner
+    banner.style.display = 'block';
+    
+    // Add click handler to start button
+    startBtn.addEventListener('click', () => {
+      window.location.href = '/pages/home.html';
+    });
+    
+    // Add hover effect
+    startBtn.addEventListener('mouseenter', () => {
+      startBtn.style.transform = 'translateY(-2px)';
+    });
+    startBtn.addEventListener('mouseleave', () => {
+      startBtn.style.transform = 'translateY(0)';
+    });
+  }
 
   /**
    * Apply search and completion filters
@@ -87,15 +140,69 @@ document.addEventListener('DOMContentLoaded', () => {
       tr.setAttribute('data-challenge-id', c.id);
       tr.style.cursor = 'pointer';
 
+      // Check if this is today's daily challenge
+      const isDailyChallenge = dailyChallengeData && 
+                               dailyChallengeData.challenge.id === c.id;
+
+      // Highlight daily challenge row
+      if (isDailyChallenge) {
+        tr.style.backgroundColor = '#fef3c7'; // Light yellow highlight
+        tr.style.borderLeft = '4px solid #f59e0b'; // Orange border
+      }
+
       // Make entire row clickable
       tr.addEventListener('click', () => {
-        window.location.href = `/pages/problem.html?id=${c.id}`;
+        // If it's the daily challenge, go to home page instead
+        if (isDailyChallenge) {
+          window.location.href = `/pages/home.html`;
+        } else {
+          window.location.href = `/pages/problem.html?id=${c.id}`;
+        }
       });
 
-      // Title column
+      // Title column with daily challenge badge
       const titleTd = document.createElement('td');
       titleTd.className = 'challenge-title-cell';
-      titleTd.textContent = c.title || '(no title)';
+      
+      if (isDailyChallenge) {
+        const badge = document.createElement('span');
+        badge.style.cssText = `
+          display: inline-block;
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          color: white;
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 11px;
+          font-weight: bold;
+          margin-right: 8px;
+          text-transform: uppercase;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        `;
+        badge.textContent = '⭐ Today\'s Daily';
+        titleTd.appendChild(badge);
+        
+        // Add bonus indicator if available
+        if (dailyChallengeData.bonus.available) {
+          const bonusBadge = document.createElement('span');
+          bonusBadge.style.cssText = `
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 8px;
+          `;
+          bonusBadge.textContent = '💰 +50 Bonus';
+          bonusBadge.title = dailyChallengeData.bonus.message;
+          titleTd.appendChild(bonusBadge);
+        }
+      }
+      
+      const titleText = document.createElement('span');
+      titleText.textContent = c.title || '(no title)';
+      titleTd.appendChild(titleText);
 
       // Easy column
       const easyTd = document.createElement('td');

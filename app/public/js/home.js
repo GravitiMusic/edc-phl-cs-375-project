@@ -12,39 +12,39 @@ import { cpp } from "https://esm.sh/@codemirror/lang-cpp";
 
 let editor = null;
 let currentLanguageId = 71; // Default to Python
+let currentDailyChallenge = null; // Store the current daily challenge
+let currentDifficulty = 'easy'; // Track selected difficulty
 
 // Language configurations
 const languageConfigs = {
-  71: { name: 'Python', extension: python(), defaultCode: 'def two_sum(nums, target):\n    # Write your solution here\n    pass\n\n# Test your code\nnums = [2, 7, 11, 15]\ntarget = 9\nprint(two_sum(nums, target))' },
-  63: { name: 'JavaScript', extension: javascript(), defaultCode: 'function twoSum(nums, target) {\n    // Write your solution here\n}\n\n// Test your code\nconst nums = [2, 7, 11, 15];\nconst target = 9;\nconsole.log(twoSum(nums, target));' },
-  62: { name: 'Java', extension: java(), defaultCode: 'class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Write your solution here\n        return new int[]{};\n    }\n    \n    public static void main(String[] args) {\n        Solution sol = new Solution();\n        int[] nums = {2, 7, 11, 15};\n        int target = 9;\n        int[] result = sol.twoSum(nums, target);\n        System.out.println(java.util.Arrays.toString(result));\n    }\n}' },
-  50: { name: 'C', extension: cpp(), defaultCode: '#include <stdio.h>\n\nvoid two_sum(int* nums, int numsSize, int target) {\n    // Write your solution here\n}\n\nint main() {\n    int nums[] = {2, 7, 11, 15};\n    int target = 9;\n    two_sum(nums, 4, target);\n    return 0;\n}' },
-  54: { name: 'C++', extension: cpp(), defaultCode: '#include <iostream>\n#include <vector>\nusing namespace std;\n\nvector<int> twoSum(vector<int>& nums, int target) {\n    // Write your solution here\n    return {};\n}\n\nint main() {\n    vector<int> nums = {2, 7, 11, 15};\n    int target = 9;\n    vector<int> result = twoSum(nums, target);\n    for (int i : result) {\n        cout << i << " ";\n    }\n    return 0;\n}' }
+  71: { name: 'Python', extension: python() },
+  63: { name: 'JavaScript', extension: javascript() },
+  62: { name: 'Java', extension: java() },
+  50: { name: 'C', extension: cpp() },
+  54: { name: 'C++', extension: cpp() }
 };
 
 /**
  * Initialize the CodeMirror editor
  */
-function initializeEditor() {
+function initializeEditor(starterCode = '', languageId = 71) {
   const editorContainer = document.getElementById('codeEditor');
+  const config = languageConfigs[languageId];
+  
+  // Destroy existing editor if present
+  if (editor) {
+    editor.destroy();
+  }
   
   editor = new EditorView({
     state: EditorState.create({
-      doc: `def subtract_numbers(a, b):
-    """
-    This function should subtract b from a.
-    Right now it performs the wrong operation.
-    Fix the line below.
-    """
-    result = a + b  # TODO: change this to subtract instead of add
-    return result
-`,
-      extensions: [basicSetup, languageConfigs[71].extension], //python
+      doc: starterCode || '// Loading...',
+      extensions: [basicSetup, config.extension],
     }),
     parent: editorContainer,
   });
 
-  console.log('✅ Code editor initialized');
+  console.log('✅ Code editor initialized with', config.name);
 }
 
 /**
@@ -59,20 +59,15 @@ function changeLanguage(languageId) {
     return;
   }
 
-  // Destroy old editor
-  if (editor) {
-    editor.destroy();
+  // Get starter code for the new language
+  let starterCode = '// Loading...';
+  if (currentDailyChallenge && currentDailyChallenge.challenge.difficulties[currentDifficulty]) {
+    const difficultyData = currentDailyChallenge.challenge.difficulties[currentDifficulty];
+    starterCode = getStarterCodeForLanguage(difficultyData.starterCode, currentLanguageId);
   }
 
-  // Create new editor with appropriate language
-  const editorContainer = document.getElementById('codeEditor');
-  editor = new EditorView({
-    state: EditorState.create({
-      doc: config.defaultCode,
-      extensions: [basicSetup, config.extension],
-    }),
-    parent: editorContainer,
-  });
+  // Reinitialize editor with new language and starter code
+  initializeEditor(starterCode, currentLanguageId);
 
   console.log(`✅ Switched to ${config.name}`);
 }
@@ -139,26 +134,104 @@ async function runCode() {
 async function submitSolution() {
   const code = editor.state.doc.toString();
   const submitBtn = document.getElementById('submitCodeBtn');
+  const outputEl = document.getElementById('codeOutput');
   
   if (!code.trim()) {
     alert('Please write some code before submitting!');
     return;
   }
 
+  if (!currentDailyChallenge) {
+    alert('No daily challenge loaded. Please refresh the page.');
+    return;
+  }
+
   // Disable button
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<span class="btn-icon">⏳</span>Submitting...';
+  outputEl.textContent = "⏳ Submitting your solution...";
 
   try {
-    // For now, just show a success message
-    // In the future, this would submit to your backend
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const response = await fetch('/submissions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        challenge_id: currentDailyChallenge.challenge.id,
+        source_code: code,
+        language_id: currentLanguageId,
+        difficulty: currentDifficulty
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Submission failed: ${response.status}`);
+    }
+
+    const result = await response.json();
     
-    alert('🎉 Solution submitted successfully!\n\nThis is a placeholder. In the full version, your solution would be tested against multiple test cases.');
+    if (result.success) {
+      const submission = result.submission;
+      
+      // Build success message
+      let message = '';
+      
+      if (submission.status === 'passed') {
+        message = `🎉 Success! All tests passed (${submission.tests_passed}/${submission.tests_total})!\n\n`;
+        message += `Points earned: ${submission.points_earned}`;
+        
+        if (submission.bonus_points > 0) {
+          message += ` (includes +${submission.bonus_points} bonus!)`;
+        }
+        
+        // Show streak info if available
+        if (result.streak) {
+          message += `\n\n🔥 Streak: ${result.streak.streak} days!`;
+          
+          if (result.streak.streakAction === 'incremented') {
+            message += ` (+1)`;
+          } else if (result.streak.streakAction === 'started') {
+            message += ` (Started!)`;
+          } else if (result.streak.streakAction === 'reset') {
+            message += ` (Streak reset - complete daily challenges consecutively!)`;
+          }
+          
+          if (result.streak.streak === result.streak.longestStreak && result.streak.streak > 1) {
+            message += `\n🏆 New personal best!`;
+          }
+        }
+        
+        outputEl.textContent = `✅ ${message}`;
+        alert(message);
+        
+        // Reload stats to show updated points and streak
+        await loadUserStats();
+        
+      } else if (submission.status === 'failed') {
+        message = `❌ Tests failed (${submission.tests_passed}/${submission.tests_total} passed)\n\n`;
+        message += result.output.stdout || 'No output';
+        outputEl.textContent = message;
+        alert('Some tests failed. Check the output for details.');
+      } else if (submission.status === 'error') {
+        message = '❌ Compilation or runtime error:\n\n';
+        message += result.output.stderr || result.output.compile_output || 'Unknown error';
+        outputEl.textContent = message;
+        alert('Your code has errors. Check the output for details.');
+      } else if (submission.status === 'timeout') {
+        message = '⏱️ Time limit exceeded. Your code took too long to run.';
+        outputEl.textContent = message;
+        alert(message);
+      }
+    } else {
+      throw new Error(result.error || 'Submission failed');
+    }
     
-    console.log('✅ Solution submitted');
+    console.log('✅ Solution submitted:', result);
   } catch (err) {
-    alert('Failed to submit solution. Please try again.');
+    const errorMsg = 'Failed to submit solution. Please try again.';
+    outputEl.textContent = `❌ ${errorMsg}\n\n${err.message}`;
+    alert(errorMsg);
     console.error('Error submitting solution:', err);
   } finally {
     // Re-enable button
@@ -182,6 +255,111 @@ function displayChallengeDate() {
   };
   
   dateEl.textContent = today.toLocaleDateString('en-US', options);
+}
+
+/**
+ * Fetch and display today's daily challenge
+ */
+async function loadDailyChallenge() {
+  try {
+    const response = await fetch('/api/daily-challenge');
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch daily challenge: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error('Daily challenge not available');
+    }
+    
+    currentDailyChallenge = data;
+    console.log('✅ Daily challenge loaded:', data.challenge.title);
+    
+    // Update UI with challenge details
+    displayDailyChallenge(data);
+    
+    return data;
+  } catch (error) {
+    console.error('Error loading daily challenge:', error);
+    // Show error message to user
+    document.getElementById('challengeTitle').textContent = 'Challenge Unavailable';
+    document.getElementById('challengeDescription').innerHTML = 
+      '<p>Unable to load today\'s daily challenge. Please try again later.</p>';
+  }
+}
+
+/**
+ * Display the daily challenge in the UI
+ */
+function displayDailyChallenge(data) {
+  const challenge = data.challenge;
+  
+  // Update challenge title
+  document.getElementById('challengeTitle').textContent = challenge.title;
+  
+  // Update challenge description
+  document.getElementById('challengeDescription').innerHTML = challenge.description;
+  
+  // Determine difficulty to show (default to easy, or first incomplete)
+  let difficulty = 'easy';
+  if (challenge.difficulties.easy.completed && !challenge.difficulties.medium.completed) {
+    difficulty = 'medium';
+  } else if (challenge.difficulties.medium.completed && !challenge.difficulties.hard.completed) {
+    difficulty = 'hard';
+  }
+  
+  currentDifficulty = difficulty;
+  
+  // Update difficulty badge
+  const difficultyBadge = document.getElementById('challengeDifficultyBadge');
+  if (difficultyBadge) {
+    difficultyBadge.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+    difficultyBadge.className = `difficulty-badge difficulty-${difficulty}`;
+  }
+  
+  // Update points display
+  const pointsMap = { easy: 25, medium: 50, hard: 75 };
+  const basePoints = pointsMap[difficulty];
+  const pointsEl = document.getElementById('challengePoints');
+  if (pointsEl) {
+    pointsEl.textContent = `+${basePoints} points`;
+  }
+  
+  // Show/hide bonus indicator
+  const bonusEl = document.getElementById('challengeBonus');
+  if (bonusEl) {
+    if (data.bonus.available) {
+      bonusEl.style.display = 'inline-block';
+      bonusEl.title = data.bonus.message;
+      console.log(`💰 Bonus available: ${data.bonus.message}`);
+    } else {
+      bonusEl.style.display = 'none';
+    }
+  }
+  
+  // Get starter code for current language and difficulty
+  const starterCode = getStarterCodeForLanguage(challenge.difficulties[difficulty].starterCode, currentLanguageId);
+  
+  // Initialize editor with starter code
+  initializeEditor(starterCode, currentLanguageId);
+}
+
+/**
+ * Get starter code for specific language
+ */
+function getStarterCodeForLanguage(starterCodeObj, languageId) {
+  const languageMap = {
+    71: 'python',
+    63: 'javascript',
+    62: 'java',
+    50: 'c',
+    54: 'cpp'
+  };
+  
+  const langKey = languageMap[languageId] || 'python';
+  return starterCodeObj[langKey] || starterCodeObj.python || '// Starter code not available';
 }
 
 /**
@@ -209,7 +387,7 @@ async function checkAuth() {
 /**
  * Display user information on the page
  */
-function displayUserInfo(user) {
+async function displayUserInfo(user) {
   // Hide loading, show content
   document.getElementById('loading').style.display = 'none';
   document.getElementById('content').style.display = 'block';
@@ -220,23 +398,52 @@ function displayUserInfo(user) {
     usernameDisplay.textContent = user.username;
   }
 
-  // Initialize the editor now that the page is visible
-  initializeEditor();
+  // Display challenge date
   displayChallengeDate();
 
   // Set up event listeners
   setupEventListeners();
 
-  // In the future, fetch user stats from API
-  // For now, showing placeholder data
-  updateStats({
-    challengesCompleted: 0,
-    currentStreak: 0,
-    totalPoints: 0,
-    userRank: 'N/A'
-  });
+  // Fetch and display today's daily challenge
+  await loadDailyChallenge();
+
+  // Fetch and display real user stats
+  await loadUserStats();
 
   console.log('✅ User info loaded:', user);
+}
+
+/**
+ * Load and display user statistics
+ */
+async function loadUserStats() {
+  try {
+    const response = await fetch('/stats/me');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch stats');
+    }
+    
+    const data = await response.json();
+    
+    if (data.success && data.stats) {
+      updateStats({
+        challengesCompleted: data.stats.challenges_completed || 0,
+        currentStreak: data.stats.day_streak || 0,
+        totalPoints: data.stats.total_points || 0,
+        userRank: data.stats.rank || 'N/A'
+      });
+    }
+  } catch (error) {
+    console.error('Error loading user stats:', error);
+    // Show placeholder data on error
+    updateStats({
+      challengesCompleted: 0,
+      currentStreak: 0,
+      totalPoints: 0,
+      userRank: 'N/A'
+    });
+  }
 }
 
 /**

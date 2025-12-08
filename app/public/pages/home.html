@@ -68,34 +68,6 @@
       </div>
     </section>
 
-    <!-- Stats Section -->
-    <section class="stats-section">
-      <div class="container">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon">🎯</div>
-            <div class="stat-value" id="challengesCompleted">0</div>
-            <div class="stat-label">Challenges Completed</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">🔥</div>
-            <div class="stat-value" id="currentStreak">0</div>
-            <div class="stat-label">Day Streak</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">⭐</div>
-            <div class="stat-value" id="totalPoints">0</div>
-            <div class="stat-label">Total Points</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">🏆</div>
-            <div class="stat-value" id="userRank">#N/A</div>
-            <div class="stat-label">Global Rank</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- Daily Challenge Section -->
     <section class="daily-challenge-section">
       <div class="container-wide">
@@ -110,10 +82,11 @@
         <div class="challenge-card">
           <div class="challenge-header">
             <div class="challenge-info">
-              <h3 class="challenge-title" id="challengeTitle">Two Sum</h3>
+              <h3 class="challenge-title" id="challengeTitle">Loading...</h3>
               <div class="challenge-meta">
-                <span class="difficulty-badge difficulty-medium">Medium</span>
-                <span class="challenge-points">+50 points</span>
+                <span class="difficulty-badge difficulty-easy" id="challengeDifficultyBadge">Easy</span>
+                <span class="challenge-points" id="challengePoints">Loading...</span>
+                <span class="challenge-bonus" id="challengeBonus" style="display: none;">💰 +50 Bonus!</span>
               </div>
             </div>
           </div>
@@ -165,6 +138,34 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].</pre>
       </div>
     </section>
 
+    <!-- Stats Section -->
+    <section class="stats-section">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-value" id="challengesCompleted">0</div>
+            <div class="stat-label">Challenges Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-value" id="currentStreak">0</div>
+            <div class="stat-label">Day Streak</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-value" id="totalPoints">0</div>
+            <div class="stat-label">Total Points</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-value" id="userRank">#N/A</div>
+            <div class="stat-label">Global Rank</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Features Section -->
     <section class="features-section">
       <div class="container">
@@ -201,11 +202,11 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].</pre>
           <h3>Ready for More?</h3>
           <p>Explore our full library of coding challenges and level up your skills</p>
           <div class="quick-actions-buttons">
-            <button class="btn-action-primary" onclick="window.location.href='index.html'">
+            <button class="btn-action-primary" onclick="window.location.href='challenges.html'">
               Browse All Challenges
             </button>
-            <button class="btn-action-secondary" onclick="window.location.href='account-settings.html'">
-              View Profile
+            <button class="btn-action-secondary" onclick="window.location.href='leaderboard.html'">
+              View Leaderboard
             </button>
           </div>
         </div>

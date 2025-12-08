@@ -22,6 +22,8 @@ router.get("/me", requireAuth, async (req, res) => {
         hard_completed,
         challenges_completed,
         day_streak,
+        longest_streak,
+        last_daily_challenge_date,
         created_at,
         last_login
       `)
@@ -89,7 +91,8 @@ router.get("/allStats", async (req, res) => {
         medium_completed,
         hard_completed,
         challenges_completed, 
-        day_streak
+        day_streak,
+        longest_streak
       `)
       .order('total_points', { ascending: false })
       .order('challenges_completed', { ascending: false })

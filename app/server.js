@@ -135,6 +135,10 @@ app.use('/auth', authRoutes);
 const challengesRoutes = require('./routes/challenges');
 app.use('/challenges', challengesRoutes);
 
+// Daily Challenge API
+const dailyChallengeRoutes = require('./routes/dailyChallenge');
+app.use('/api/daily-challenge', dailyChallengeRoutes);
+
 // Stats API
 const statsRoutes = require('./routes/stats');
 app.use('/stats', statsRoutes);

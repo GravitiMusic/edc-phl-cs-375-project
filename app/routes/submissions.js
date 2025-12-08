@@ -3,6 +3,11 @@ const router = express.Router();
 const supabase = require('../database');
 const { requireAuth } = require('../middleware/auth');
 const { codeExecutionLimiter } = require('../middleware/rateLimiter');
+const {
+  isTodaysDaily,
+  updateStreak,
+  getUserToday
+} = require('../utils/dailyChallengeService');
 
 /**
  * POST /submissions
@@ -102,7 +107,15 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
     if (completionError) throw completionError;
 
     const isFirstCompletion = (!existingCompletion || existingCompletion.length === 0) && status === 'passed';
-    const points_earned = isFirstCompletion ? pointsMap[difficulty] : 0;
+    const basePoints = isFirstCompletion ? pointsMap[difficulty] : 0;
+
+    // Check if this is today's daily challenge
+    const today = getUserToday('UTC'); // Using UTC for now
+    const isDailyChallenge = await isTodaysDaily(challenge_id, today);
+    
+    // Award bonus points if completing today's daily challenge for the first time
+    const bonusPoints = (isDailyChallenge && isFirstCompletion) ? 50 : 0;
+    const points_earned = basePoints + bonusPoints;
 
     // Save submission to database
     const { data: submissionData, error: submissionError } = await supabase
@@ -119,6 +132,8 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
         execution_time_ms: result.time ? Math.round(parseFloat(result.time) * 1000) : null,
         memory_used_kb: result.memory ? parseInt(result.memory) : null,
         points_earned,
+        bonus_points: bonusPoints,
+        completed_on_daily_date: (isDailyChallenge && isFirstCompletion) ? today : null,
         error_message: result.compile_output || result.stderr || null,
         submitted_at: new Date().toISOString()
       })
@@ -126,6 +141,18 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
       .single();
 
     if (submissionError) throw submissionError;
+
+    // Update streak if completed daily challenge
+    let streakInfo = null;
+    if (isDailyChallenge && isFirstCompletion) {
+      try {
+        streakInfo = await updateStreak(user_id, today);
+        console.log(`🔥 Streak updated: ${streakInfo.streak} days (${streakInfo.streakAction})`);
+      } catch (streakError) {
+        console.error('Error updating streak:', streakError);
+        // Don't fail the submission if streak update fails
+      }
+    }
 
     // Update user statistics if first completion
     if (isFirstCompletion) {
@@ -191,7 +218,9 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
         execution_time_ms: result.time ? Math.round(parseFloat(result.time) * 1000) : null,
         memory_used_kb: result.memory ? parseInt(result.memory) : null,
         points_earned: points_earned,
+        bonus_points: bonusPoints,
         is_first_completion: isFirstCompletion,
+        is_daily_challenge: isDailyChallenge,
         submitted_at: submissionData.submitted_at
       },
       output: {
@@ -200,6 +229,7 @@ router.post('/', requireAuth, codeExecutionLimiter, async (req, res) => {
         compile_output: result.compile_output || null,
         message: result.message || null
       },
+      streak: streakInfo,
       user_stats: statsError ? null : userStats
     });
 
@@ -234,6 +264,8 @@ router.get('/history', requireAuth, async (req, res) => {
         execution_time_ms,
         memory_used_kb,
         points_earned,
+        bonus_points,
+        completed_on_daily_date,
         submitted_at,
         language_id
       `)
@@ -277,6 +309,8 @@ router.get('/:id', requireAuth, async (req, res) => {
         execution_time_ms,
         memory_used_kb,
         points_earned,
+        bonus_points,
+        completed_on_daily_date,
         error_message,
         submitted_at
       `)

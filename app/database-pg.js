@@ -9,15 +9,42 @@ if (process.env.DATABASE_URL) {
   // Detect if this is a Supabase connection (contains 'supabase.co')
   const isSupabase = process.env.DATABASE_URL.includes('supabase.co');
   
-  poolConfig = {
-    connectionString: process.env.DATABASE_URL,
-    ssl: isSupabase 
-      ? { rejectUnauthorized: false }
-      : (process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false),
-    max: 5, // Smaller pool for sessions only
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
-  };
+  // Fix for Supabase: Parse connection string and explicitly set password as string
+  if (isSupabase) {
+    try {
+      const url = new URL(process.env.DATABASE_URL);
+      
+      poolConfig = {
+        host: url.hostname,
+        port: parseInt(url.port) || 5432,
+        database: url.pathname.slice(1), // Remove leading /
+        user: url.username,
+        password: String(decodeURIComponent(url.password)), // Explicitly ensure string
+        ssl: { rejectUnauthorized: false },
+        max: 5,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+      };
+    } catch (err) {
+      console.warn('⚠️  Could not parse DATABASE_URL, falling back to connection string');
+      poolConfig = {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        max: 5,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+      };
+    }
+  } else {
+    // Non-Supabase connection
+    poolConfig = {
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      max: 5,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    };
+  }
 } else {
   // Use individual environment variables (for local development)
   poolConfig = {
@@ -40,4 +67,7 @@ pool.on('error', (err) => {
 });
 
 module.exports = pool;
+
+
+
 
