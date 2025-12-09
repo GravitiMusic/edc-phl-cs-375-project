@@ -142,12 +142,17 @@ function changeLanguage(languageId) {
 }
 
 /**
- * Run the code
+ * Run the code - Runs against only the first test case (no points awarded)
  */
 async function runCode() {
   const code = editor.state.doc.toString();
   const outputEl = document.getElementById('codeOutput');
   const runBtn = document.getElementById('runCodeBtn');
+  
+  if (!currentDailyChallenge) {
+    outputEl.textContent = "❌ No challenge loaded. Please refresh the page.";
+    return;
+  }
   
   // Disable button and show loading
   runBtn.disabled = true;
@@ -155,15 +160,28 @@ async function runCode() {
   outputEl.textContent = "⏳ Your code is being executed...";
 
   try {
+    // Generate test harness with ONLY the first test case (for Python)
+    let codeToRun = code;
+    if (currentLanguageId === 71 && currentDailyChallenge.challenge.testCases) {
+      const testCases = typeof currentDailyChallenge.challenge.testCases === 'string' 
+        ? JSON.parse(currentDailyChallenge.challenge.testCases) 
+        : currentDailyChallenge.challenge.testCases;
+      
+      if (testCases && testCases.length > 0) {
+        // Only use the first test case
+        codeToRun = generateSingleTestHarness(code, testCases[0]);
+      }
+    }
+    
     const response = await window.csrfProtection.protectedFetch("/challenge/run", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        source_code: code,
-        language_id: currentLanguageId,   // e.g. 71 for Python
-        challengeId: "easy_subtract",     // TODO: swap this for your real challenge id/slug
+        source_code: codeToRun,
+        language_id: currentLanguageId,
+        challengeId: currentDailyChallenge.challenge.id,
       }),
     });
 
@@ -178,14 +196,20 @@ async function runCode() {
 
     const result = await response.json();
 
-    // Expecting backend to send something like:
-    // { summary: "3/3 tests passed", raw_stdout: "...", error: null }
+    // Parse the result
     if (result.summary) {
-      outputEl.textContent = `✅ ${result.summary}`;
+      // Check if test passed or failed
+      if (result.summary.includes("1/1 tests passed")) {
+        outputEl.textContent = `✅ Test case passed!\n\nYour code successfully passed the sample test case.\n(This is just a test run - submit your solution to earn points)`;
+      } else {
+        outputEl.textContent = `❌ Test case failed.\n\n${result.raw_stdout || result.summary}\n\n(This is just a test run - no points deducted)`;
+      }
     } else if (result.error) {
-      outputEl.textContent = "⚠️ Error while running tests:\n\n" + result.error;
+      outputEl.textContent = "⚠️ Error while running test:\n\n" + result.error;
+    } else if (result.raw_stdout) {
+      outputEl.textContent = result.raw_stdout;
     } else {
-      outputEl.textContent = "❓ No summary received from challenge runner.";
+      outputEl.textContent = "❓ No output received from test runner.";
     }
   } catch (err) {
     outputEl.textContent = "❌ Request failed:\n\n" + err.message;
@@ -195,6 +219,64 @@ async function runCode() {
     runBtn.disabled = false;
     runBtn.innerHTML = '<span class="btn-icon">▶</span>Run Code';
   }
+}
+
+/**
+ * Generate Python test harness for a SINGLE test case (for Run Code button)
+ */
+function generateSingleTestHarness(userCode, testCase) {
+  console.log('✅ Generating single test harness for sample test');
+  
+  // Generate test code
+  let testCode = `${userCode}\n\n`;
+  testCode += `# Test Harness - Sample Test (Auto-generated)\n`;
+  testCode += `tests_passed = 0\n`;
+  testCode += `tests_failed = 0\n`;
+  testCode += `test_results = []\n\n`;
+  
+  testCode += `def run_test(test_num, input_str, expected_str):\n`;
+  testCode += `    global tests_passed, tests_failed, test_results\n`;
+  testCode += `    try:\n`;
+  testCode += `        # Parse input and expected\n`;
+  testCode += `        actual = eval(f"solution{input_str}")\n`;
+  testCode += `        expected = eval(expected_str)\n`;
+  testCode += `        \n`;
+  testCode += `        if actual == expected:\n`;
+  testCode += `            tests_passed += 1\n`;
+  testCode += `            test_results.append(f"✓ Test {test_num}: PASS")\n`;
+  testCode += `            test_results.append(f"  Input: {input_str}")\n`;
+  testCode += `            test_results.append(f"  Expected: {expected}")\n`;
+  testCode += `            test_results.append(f"  Got: {actual}")\n`;
+  testCode += `        else:\n`;
+  testCode += `            tests_failed += 1\n`;
+  testCode += `            test_results.append(f"✗ Test {test_num}: FAIL")\n`;
+  testCode += `            test_results.append(f"  Input: {input_str}")\n`;
+  testCode += `            test_results.append(f"  Expected: {expected}")\n`;
+  testCode += `            test_results.append(f"  Got: {actual}")\n`;
+  testCode += `    except Exception as e:\n`;
+  testCode += `        tests_failed += 1\n`;
+  testCode += `        test_results.append(f"✗ Test {test_num}: ERROR")\n`;
+  testCode += `        test_results.append(f"  Input: {input_str}")\n`;
+  testCode += `        test_results.append(f"  Error: {str(e)}")\n`;
+  testCode += `    test_results.append("")  # blank line\n\n`;
+  
+  // Add the single test case
+  const input = testCase.input.replace(/"/g, '\\"');
+  const expected = testCase.expected.replace(/"/g, '\\"');
+  testCode += `run_test(1, "${input}", "${expected}")\n`;
+  
+  // Print results
+  testCode += `\n# Print all test results\n`;
+  testCode += `for result in test_results:\n`;
+  testCode += `    print(result)\n`;
+  testCode += `\n`;
+  testCode += `# Print summary (must be last line for backend parsing)\n`;
+  testCode += `total_tests = tests_passed + tests_failed\n`;
+  testCode += `print(f"\\n{'='*50}")\n`;
+  testCode += `print(f"{'='*50}")\n`;
+  testCode += `print(f"{tests_passed}/{total_tests} tests passed")\n`;
+  
+  return testCode;
 }
 
 /**
